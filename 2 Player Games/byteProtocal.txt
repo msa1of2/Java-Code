@@ -1,0 +1,13 @@
+[type:, 1, 2, 3, 4, 5, 6, 7]
+[0(move), x1, y1, x2, y2, stop Opp Move, Up Grade Value, gameID]
+[1(board), count(total), gameID, 3, 4, 5, 6, 7] + ...
+[2(String), count(total), VOID, 3, 4, 5, 6, 7] + ...
+[3(Error), boardError, SyncErr, Error Value, 4, 5, 6, 7]
+[4(Board Control), again, NewGME, Game Select, 4, 5, 6, 7]
+[5(general Info), isReady, genInfo, Win/lose, 4, 5, 6, reqestInfo(size)]
+[6(Bonus info)] its part of a larger chain 
+
+TODO:
+Complete refactor of game's connection handler code - switch to multi-user one (newer one)
+Lobby waiting room has arcade games to play while waiting - make infinite simple score type games while displaying IP / port to connect to
+Game library changes based on the number of players unless options menu allows for random pairing so 2 player games will be able to be played with > 2 players on network

@@ -1,0 +1,262 @@
+package helpful.datastructures;
+public class Graph<E>{
+    private MyHashMap<E, MyHashSet<Pair<E, Integer>>> map;
+
+    public Graph() {
+        this.map = new MyHashMap<E, MyHashSet<Pair<E, Integer>>>();
+    }
+    public void add(E data){
+        if (!map.keySet().contains(data)){
+            map.put(data, new MyHashSet<Pair<E, Integer>>());
+        }
+    }
+    public void add(E[] data){
+        for (int i=0;i<data.length;i++){
+            add(data[i]);
+        }
+    }
+	public boolean contains(E node){
+		return map.keySet().contains(node);
+	}
+	public E complete(E data){
+		if (!contains(data)) return data;
+		return map.keySet().get(data);
+	}
+    public MyHashSet<E> get(E data){
+		MyHashSet<E> send = new MyHashSet<E>();
+		for (Pair<E, Integer> item : map.get(data)){
+			send.add(item.getKey());
+		}
+        return send;
+    }
+    public int getWeight(E node1, E node2){
+        if (map.keySet().contains(node1) && map.keySet().contains(node2)){
+            MyHashSet<Pair<E, Integer>> set = map.get(node1);
+            for (Pair<E, Integer> item : set){
+                if (item.getKey().equals(node2)){
+                    return item.getValue();
+                }
+            }
+            return -2;
+        }
+        return -1;
+    }
+	public void setWeight(E node1, E node2, int value){
+		if (!map.containsKey(node1) || !map.containsKey(node2)) return;
+		map.get(node1).set(new Pair<>(map.keySet().get(node2), value));
+		map.get(node2).set(new Pair<>(map.keySet().get(node1), value));
+	}
+    public E getKey(E data){
+        return map.getKey(data);
+    }
+    public void addEdge(E data1, E data2, int value){
+        if (!(map.containsKey(data1) && map.containsKey(data2))){
+            return;
+        }
+        map.get(data1).add(new Pair<E, Integer>(map.keySet().get(data2), value));
+        map.get(data2).add(new Pair<E, Integer>(map.keySet().get(data1), value));
+    }
+    public void remove(E data){
+        if (!map.containsKey(data)){
+            return;
+        } 
+        for (Pair<E, Integer> nodePair : map.get(data)){
+			E node = nodePair.getKey();
+            map.get(node).remove(new Pair<E, Integer> (data, 0));
+        }
+        map.remove(data);
+    }
+    public String toString(){
+        String send = "";
+        for (E key : map.keySet()){
+            send+=(key + " -> ");
+            for (Pair<E, Integer> valuePair : map.get(key)){
+				E value = valuePair.getKey();
+                send+=(valuePair.toString() + " ");
+            }
+            send+="\n";
+        }
+        return send;
+    }
+    public E breadthSearch(E startNode, E data){
+        int visited = 0;
+        MyHashSet<E> visitedNodes = new MyHashSet<E>();
+        MyHashSet<E> toVisitNodes = new MyHashSet<E>();
+        toVisitNodes.add(startNode);
+        while (visited < map.size()){
+            MyHashSet<E> tempList = new MyHashSet<E>();
+            for (E node : toVisitNodes){
+                if (node.equals(data)){
+                    return node;
+                }
+                visitedNodes.add(node);
+                visited++;
+				
+				//add only unvisited nodes
+                for (Pair<E, Integer> value : map.get(new Pair<E, Integer> (node, 0))){
+                    if (!visitedNodes.contains(value.getKey()) && !tempList.contains(value.getKey())){
+                        tempList.add(value.getKey());
+                    }
+                }
+            }
+            toVisitNodes = tempList;
+        }
+        return null;
+    }
+    public E depthSearchRecursion(E node, E data){
+        MyHashSet<Pair<E, Integer>> visited = new MyHashSet<Pair<E, Integer>>();
+        return recursionDepthRunner(node, data, visited);
+    }
+    public E recursionDepthRunner(E node, E data, MyHashSet<Pair<E, Integer>> visited){
+        if (visited.contains(new Pair<E, Integer> (node, 0))){ //already visited the node before
+            return null;
+        }
+        visited.add(new Pair<E, Integer> (node, 0));
+        if (data.equals(node)){ //data is in the node, found it
+            return node;
+        }
+        for (Pair<E, Integer> valuePair : map.get(node)){
+			E value = valuePair.getKey();
+            E temp = recursionDepthRunner(value, data, visited);
+            if (temp != null){ //make sure the return data is valid
+                return temp;
+            }
+        }
+        return null;
+    }
+    public MyHashSet<Pair<E, Integer>> getNeighbors(E element) {
+        return map.get(element);
+    }
+    public void clear(){
+        map.clear();
+    }
+    public MyHashSet<E> keySet(){
+        return map.keySet();
+    }
+    public E getKey(int num){
+        return map.keySet().get(num);
+    }
+	public boolean purgeOutside(E start){
+		if (!map.containsKey(start)) return false; //null protection
+		//Get all the nodes connected to this one
+		MyHashSet<E> visited = new MyHashSet<E>();
+		getConnected(start, visited);
+		//Inverse the nodes visited or not
+		for (E node : map.keySet()){
+			if (visited.contains(node)){
+				visited.remove(node);
+			}
+			else{
+				visited.add(node);
+			}
+		}
+		if (visited.size() == 0) return false; //Returns early if nothing is outside
+		for (E node : visited){
+			remove(node);
+		}
+		return true;
+	}
+	public void getConnected(E current, MyHashSet<E> visited){
+		if (visited.contains(current)){
+			return;
+		}
+		visited.add(current);
+		for (Pair<E,Integer> node : map.get(current)){
+			getConnected(node.getKey(), visited);
+		}
+	}
+    public DLList<E> shortestPath(E startNode, E endNode){
+		if (!map.containsKey(startNode) || !map.containsKey(endNode)) return null;
+        MyHashMap<E, Pair<E, Integer>> lengthToStart = new MyHashMap<E, Pair<E, Integer>>();
+        
+        MyHashSet<E> toVisitNodes = new MyHashSet<E>();
+        toVisitNodes.add(startNode);
+        lengthToStart.put(startNode, new Pair<E, Integer>(startNode, 0));
+        while (toVisitNodes.size() > 0){
+            //get the first node on the stack-ish thing
+            E node = toVisitNodes.get(0);
+            //dont need to visit it again
+            toVisitNodes.remove(node);
+            //go through all connections of the current node
+            for (Pair<E, Integer> value : map.get(node)){
+                //if we have seen the connection before, check if we shoould update it
+                if (lengthToStart.containsKey(value.getKey())){
+                    //if the new length is shorter, update it
+                    if (value.getValue() + lengthToStart.get(node).getValue() < lengthToStart.get(value.getKey()).getValue()){
+                        //this node has a shorter path to the start node than what is stored
+                        lengthToStart.put(value.getKey(), new Pair<E, Integer>(node, value.getValue() +lengthToStart.get(node).getValue()));
+                        //add all of the nodes connected, there might be a shorter path than what was discovered
+                        for (Pair<E, Integer> tempNode : map.get(node)){
+                            //make certain we'll visit it again
+                            toVisitNodes.add(tempNode.getKey());
+                        }
+                    }
+                }
+                else{
+                    //this node has not been visited before, put in the current length
+                    lengthToStart.put(value.getKey(), new Pair<E, Integer>(node, value.getValue() +lengthToStart.get(node).getValue()));
+                    //add all of the nodes connected after the shortest path was updated
+                    for (Pair<E, Integer> tempNode : map.get(node)){
+                        toVisitNodes.add(tempNode.getKey());
+                    }
+                }
+            }
+        }
+        //return the length 
+		//return the length 
+        DLList<E> path = new DLList<E>();
+        E currentNode = endNode;
+        while (!currentNode.equals(startNode)){
+			if (lengthToStart.get(currentNode) == null) return new DLList<E>();
+            path.add(currentNode);
+            currentNode = lengthToStart.get(currentNode).getKey();
+        }
+        path.add(currentNode);
+        return path.reverse();
+        //return lengthToStart.get(endNode).getValue();
+    }
+	public boolean slowSearchContains(E data){
+		//goes through each of the keys known here and tests the equals function compared to the value passed in
+		//Should only use this when the hashcode function has incomplete data, but there is other data to compare with
+		for (E element : map.keySet()){
+			if (element.equals(data)) return true;
+		}
+		return false;
+	}
+	public E slowSearchComplete(E data){
+		//goes through each of the keys known here and tests the equals function compared to the value passed in
+		//Should only use this when the hashcode function has incomplete data, but there is other data to compare with
+		for (E element : map.keySet()){
+			if (element.equals(data)) return element;
+		}
+		return null;
+	}
+	private class Pair<E, V>{
+		private E key;
+		private V value;
+		public Pair(E key, V value){
+			this.key = key;
+			this.value = value;
+		}
+		public E getKey(){
+			return key;
+		}
+		public V getValue(){
+			return value;
+		}
+		public String toString(){
+			return key + ":" + value;
+		}
+		public int hashCode(){
+			return key.hashCode();
+		}
+		@SuppressWarnings("unchecked")
+		public boolean equals(Object o){
+			if (o instanceof Pair){
+				Pair<E,V> p = (Pair<E,V>)o;
+				return p.getKey().equals(key);
+			}
+			return false;
+		}
+	}
+}

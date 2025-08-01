@@ -1,0 +1,47 @@
+n Users: 1 host, n players, 1 player will host, all others will connect to host computer
+Host will be running both server and user sockets, with user socket communicating like all the others
+
+Need to decide how it all starts
+
+
+Previous turn ends -> host auto moves on to the next turn
+
+host finds next player -> their turn now
+
+Turn user (TU) rolls dice -> 1 / 2 -> notify server of choice
+
+server scrutinize, test if user rolls 2 dice and has train station -> 
+| accepted -> do random num generator for num of dice -> notify all players of num dice and result in order -> players all log dice roll -> continue
+| Failed   -> Notify all players which player was caught cheating -> bump player down to observer status -> remove all money, return bought cards to the shop -> continue
+
+Host notifies each player the money gained or lost 1 card at a time (i.e. Cafe -> tell which player gains / loses what money from this card -> move to next card) -> continue
+
+TU chooses to buy item or skip buy phase -> notify Host which card is being bought -> scrutinize
+| Accepted -> host tells TU accepted -> notify all players user and card bought -> users all add to log -> adds card to server side inventory, removes money from server side purse, user does same on their end -> continue
+| Failed   -> Same as failure above, notify cheating -> bump to observer status -> continue
+
+TU finishes turn -> Host auto moves on to the next turn repeat
+
+
+Log byte storage: Byte#1 is type, Bytes 2-inf are free use
+2B-Dice Roll   = 00 - die #1 (3 bits)       - die #2 (3 bits) = 8 bits
+4B-Money Gain  = 01 - amt of Money (1 byte) - card generated (1 byte) - player cause [index](1 byte) (red for who to steal / give to, blue for who to thank) -> red negative = subtract from us, give to index -> red positive = add to us, subtract from index
+2B-Card bought  =10 - Card Index bought (1 byte)
+2B-Player cheat =11 - Player index who cheated (1 byte)
+2B-Player turn =100- player index for whose turn it now is (1 byte)
+
+
+Window traversal storage //pop ups take up 50 pix to edge of window
+byte[0] = current index
+byte[1-inf] = which popup to display, clicks in popup will traverse to the next index, a click of the back arrow goes back
+byte[1-inf][7] = BIN 1/0 for if choose button should be at the bottom
+string[1-inf] = name / description at top of window ";" separating text to be put on the choose button
+type 0 = no more windows at or after this
+type 1 = view inventory / expand on cards - scroll bar
+type 2 = choose a player - shows all players and general overview
+type 3 = specific player information
+type 4 = card expansion, full view of the card with dice activation at top, price in bottom right, description at bottom, and sprite from sprite sheet in middle, all on proper color rectangle
+type 5 = log, display the log based on the information in the list, with scroll bar
+type 6 = exit menu
+
+(floor((2n^(1/3))/2+1))^3

@@ -1,0 +1,153 @@
+No Set size for packets, handled by packet class
+
+[0] = Stage # (-1, 0, 1, 2, 3, 4)
+[1] = Turn # 0 - 255
+[2] = Boolean data
+[2][0] = Server origin (of the packet)
+[2][1] = Server Receive (should this go to the server or another player)
+[2][2,3] = Client Address (0 for P1, or server if [2][1], 1 for P2 etc.)
+[2][4] = Added card goes to hand
+[2][5] = Board state info
+[2][6] = Enemy board given
+[2][7] = EMPTY
+[3] = Error Code
+
+
+Error Codes
+0 - No Error
+1 - Wrong stage / turn - Wrong Response
+2 - No Available funds
+3 - No Action Points remaining (priority error code)
+4 - Already used faction action
+5 - No card at position
+6 - Card activation requirements is not met
+7 - Card not on board
+8 - Hand Sync issue
+
+
+Card Changes Code (Doesn't deal with health changes)
+** Binary data encompassed in an integer (4 bytes) **
+[0](1)     - Discard (T/F)
+[1](1)     - Permadeath (T/F)
+[2-7](6)   - Go to Index    (-128 - 127) - any negative values will just put it at the top of the discard pile, positive values will swap with card there
+[8-12](5)  - Shield changes (-8 - 7)
+[13-17](5) - Boost changes  (-8 - 7)
+[18-22](5) - Health changes (-8 - 7)
+[23-31](9) - Empty - ready for use by expansion slots
+
+
+Stage -1 (Other player updates)
+[0] - Player index
+
+
+
+Stage 0 Alts
+Turn 0 - Settings (Rule Variants) (only when sent from server)
+** all indexes are for bits - 0 means left value, 1 means right value**
+[0]=1 - Damage dealt by utility commands affected / not (Default) affected by opponent’s instant action
+[1]=1 - 4 Player - 6 actions points each / 6 action points total (Default)
+[2]=0 - Selling cards yields half (rounded up) (Default) / full cost of card
+[3]=1 - Day break count 1 / all (Default)
+[4]=0 - Each elemental can attack once (Default) / as many times as wanted
+[5]=0 - After elementals are attacked (with any damage), shields must be completely removed (Default) / can stay if not used
+[6]=1 - Elementals killed are discarded / Removed (Default) (aka perma-death)
+[7]=0 - March forward must occur to fill empty gaps: yes (Default) / No - aka Death March
+
+Turn # - Card update (send multiple times if the data is too big)
+[4] - Index of card
+[5-8] - Card changes
+[9] - Cause of card - negative values are from the enemy's formation
+
+
+Stage 1 - Daybreak
+[4] - Index of card
+[5] - supplemental card - local index #1 (0 for nothing)
+[6] - supplemental card - local index #2 (0 for nothing)
+[7] - supplemental card - local index #3 (0 for nothing)
+[4 + 4*n] - Other daybreaks activating
+[5 + 4*n] - sent all in one giant list
+[6 + 4*n]
+[7 + 4*n]
+... - continues until all daybreaks that clients thinks are good are added
+maximum length of 27 bytes long
+
+Server returns
+[3]=0 - all good
+[3]=5 - No card at supposed location
+[3]=6 - Card requirements not met
+[4] - Index of card activating (Confirmation)
+[5] - Index of card affected
+[6,7,8,9] - Card changes
+[10-14] - Card #2
+[15-19] - Card #3
+
+
+Stage 2 - Action phase
+
+Action Indexes
+0 - Draw card to hand
+1 - Place troop
+2 - Play command
+3 - Swap adjacent positions
+4 - Faction Action Lvl 4
+5 - Faction Action Lvl 6
+6 - Faction Action Lvl 8
+
+[4] - Index of action *See above
+[4] = 0 : Draw card
+*[5-inf] = 0
+[4] = 1 : Place troop
+*[5] = Index of placement
+*[6] = Master index of card
+[4] = 2 : Play command / utility command - entire request received will be given to appropriate card to deal with
+*[5] = Index of source
+*[6] = Index of enemy receiving (negative value if in enemy formation)
+*[7] = Index of hand
+*[8] = Master index of command / utility
+* if need more card indexes, just add them to the end here
+[4] = 3 : Swap positions
+*[5] = Index #1
+*[6] = Index #2
+[4] = 4,5,6
+*[5-12] = info wanted by the specific action
+
+Server Returns
+-TODO-
+
+
+Stage 3 - Shopping
+Server initiates 
+[4-9] - current shop options master indexes
+[10] - current money available to player
+
+Respond
+[4] - Buy option *See below
+
+Buy Options
+-1 - End shopping
+0 - Reset shop (costs 2g)
+1-6 - buy appropriate card
+
+Loop until client ends, or no money to buy anything (client auto sends end code)
+
+
+Stage 4 - Reset to 5 cards
+if hand >= 5:
+*Client sends [4-8] = cards to keep, all others discarded - place in discard pile
+*Server returns 
+**[3]=0 - A okay
+**[3]=8 - Server thinks client shouldn't have those cards in hand
+
+if hand < 5:
+*Client sends [4-4+size] = cards it currently has in hand
+*Server sends back 
+**[3]=8 - the server doesn't think the client should have those cards in hand
+**[4-8] - cards given to client
+**[9][0] = remove discard pile (server reshuffled into draw pile as not enough were in draw pile)
+
+
+
+
+
+
+

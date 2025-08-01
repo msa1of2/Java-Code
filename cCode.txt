@@ -1,0 +1,12 @@
+#include <stdio.h>
+
+int main(void) {
+    int start, stop, step;
+    printf("Enter 3 numbers (1, 10, 2) seperated by spaces: ");
+    scanf("%d%d%d", &start, &stop, &step);
+    for (int i=start;i<=stop;i+=step){
+        printf("%d\n", i);
+    }
+    
+    return 0;
+}
