@@ -1,6 +1,7 @@
 package helpful.connection;
 public class ByteTranslater{
 	//This class is supposed to be a more comprehensive byte translater to translate entire lists at a time
+	//It translates with the assumption for each section that index 0 is the most significant digit and grows rightward
 	public static byte[] toBytes(long... nums){
 		if (nums == null) throw new NullPointerException("Array cannot be null");
 		byte[] send = new byte[nums.length*8];
@@ -326,8 +327,10 @@ public class ByteTranslater{
 	//Returns a byte array starting from startIndex and containing all the bytes up to and excluding endIndex
 	public static byte[] subArray(byte[] array, int startIndex, int endIndex){
 		if (array == null) throw new NullPointerException("Array cannot be null");
-		if (startIndex >= array.length || endIndex >= array.length) throw new IndexOutOfBoundsException();
-		if (endIndex <= startIndex) throw new IllegalArgumentException("endIndex is either before or at startIndex");
+		if (startIndex >= array.length) throw new IndexOutOfBoundsException("Start index must be below " + array.length + ", not " + startIndex);
+		if (startIndex < 0) throw new IndexOutOfBoundsException("Start index must be a positive number greater than or equal to 0");
+		if (endIndex > array.length) throw new IndexOutOfBoundsException("End index must be below or equal to " + array.length + ", not " + endIndex);
+		if (endIndex <= startIndex) throw new IllegalArgumentException("End index cannot be before or at Start index");
 		byte[] send = new byte[endIndex-startIndex];
 		System.arraycopy(array, startIndex, send, 0, send.length);
 		return send;

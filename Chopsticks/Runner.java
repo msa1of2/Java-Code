@@ -32,7 +32,7 @@ public class Runner{
 		
 		calculate(false); //red team goes first
 		
-		/* //printing information
+		 //printing information
 		CSGraph.Node start = null;
 		DLList<CSGraph.Node> toPrint = new DLList<>();
 		toPrint.add(states[setTeamTurn(setRedTeam(setBlueTeam(0, 5), 5), true)]);
@@ -58,11 +58,12 @@ public class Runner{
 		}
 		
 		System.out.println("\n\nWinners:\n" + winners + "\nBlue Winners:" + blueWin + "\nRed Winners: " + redWin);
-		*/
+		
 		
 		//System.out.println(nextValues((short)154));
 		
-		CSGraph.Node start = states[setTeamTurn(setRedTeam(setBlueTeam(0, 5), 5), true)];
+		//CSGraph.Node
+		start = states[setTeamTurn(setRedTeam(setBlueTeam(0, 5), 5), true)];
 		/*System.out.println("Start: " + printable(start));
 		System.out.print("Children: ");
 		for (CSGraph.Node child : start.next()){
@@ -143,7 +144,7 @@ public class Runner{
 		toVisit.clear();
 		toVisit.add(g.getHead());
 		int childCount = 0;
-		while (toVisit.size() > 0 && count < 40000000){
+		while (toVisit.size() > 0 && count < 400){//00000){
 			current = toVisit.remove(0);
 			
 			if (current.getScore() != 0) continue; //if a repeat was added into the system
