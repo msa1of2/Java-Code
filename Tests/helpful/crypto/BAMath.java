@@ -1,4 +1,4 @@
-
+package helpful.crypto;
 import java.util.LinkedList;
 class BAMath{
 	

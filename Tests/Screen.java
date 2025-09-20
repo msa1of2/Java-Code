@@ -95,14 +95,14 @@ public class Screen extends JPanel implements MouseListener, MouseWheelListener,
 		this.addMouseListener(testing);
 		this.addMouseMotionListener(testing);
 		*/
-		hf = new HeightFluids(5, 5);
-		hf.add(2, 2, 1000);
+		/*hf = new HeightFluids(5, 5);
+		hf.add(2, 2, 1000);*/
 		
 		s = new Scalable(800, 600);
 		s.preserveAspectRatio(true);
-		test = new JButton("TEst");
+		/*test = new JButton("TEst");
 		test.setBounds(300, 100, 100, 100);
-		add(test);
+		add(test);*/
 	}
 	public Dimension getPreferredSize(){
         return new Dimension(800,600);
@@ -115,16 +115,27 @@ public class Screen extends JPanel implements MouseListener, MouseWheelListener,
 		//g.setColor(Color.darkGray);
 		//g.fillRect(0, 0, 800, 600);
 		
-		Font test = new Font("Arial", Font.PLAIN, 12);
+		//Font test = new Font("Arial", Font.PLAIN, 12);
 		
-		g.setColor(Color.white);
-		s.setColor(Color.white);
+		//g.setColor(Color.white);
+		//s.setColor(Color.white);
+		//g.setFont(test);
+		//s.setFont(test);
+		
+		//g.drawString("test1", 400, 300);
+		//s.drawString("Test2", 400, 400);
+		
+		
+		Font test = new Font("Arial", Font.PLAIN, 24);
+		AffineTransform rotation = new AffineTransform();
+		rotation.rotate(1.57);
+		Font test2 = test.deriveFont(rotation);
 		g.setFont(test);
-		s.setFont(test);
+		g.setColor(Color.white);
+		g.drawString("Test", 300, 300);
 		
-		g.drawString("test1", 400, 300);
-		s.drawString("Test2", 400, 400);
-		
+		//g.setFont(test2);
+		s.drawString("Test", 300, 300, 180);
 		
 		//hf.draw(g, 0, 0, 800, 600);
 		//testing.draw(g);

@@ -3,9 +3,9 @@ No Set size for packets, handled by packet class
 [0] = Stage # (-1, 0, 1, 2, 3, 4)
 [1] = Turn # 0 - 255
 [2] = Boolean data
-[2][0] = Server origin (of the packet)
-[2][1] = Server Receive (should this go to the server or another player)
-[2][2,3] = Client Address (0 for P1, or server if [2][1], 1 for P2 etc.)
+   ?[2][0] = Server origin (of the packet)
+   ?[2][1] = Server Receive (should this go to the server or another player)
+   ?[2][2,3] = Client Address (0 for P1, or server if [2][1], 1 for P2 etc.)
 [2][4] = Added card goes to hand
 [2][5] = Board state info
 [2][6] = Enemy board given
@@ -21,8 +21,8 @@ Error Codes
 4 - Already used faction action
 5 - No card at position
 6 - Card activation requirements is not met
-7 - Card not on board
-8 - Hand Sync issue
+    ?7 - Card not on board
+7 - Hand Sync issue
 
 
 Card Changes Code (Doesn't deal with health changes)

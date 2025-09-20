@@ -1,9 +1,9 @@
-
+package helpful.crypto;
 import java.util.Scanner;
 import java.util.Random;
 import helpful.connection.ByteTranslater;
 
-class Debug{
+public class Debug{
 	public static void main(String args[]){
 		//System.out.println(toString(BAMath.trim(new byte[] {(byte)0x00,(byte)0x00,(byte)0x28,(byte)0x00})));
 		new Debug();

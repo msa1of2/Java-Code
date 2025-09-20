@@ -137,6 +137,16 @@ public class Scalable{
 		tempPoint = transform.transform(tempPoint, null);
 		toDraw.drawString(str, (int)tempPoint.getX(), (int)tempPoint.getY());
 	}
+	public void drawString(String str, int x, int y, int degs){ //Draws the string with an achor point of the bottom left of the text but rotated by degs - measured in degrees
+		if (toDraw == null || transform == null) throw new IllegalArgumentException("You must call init(Graphics) before you can start drawing");
+		tempPoint = new Point2D.Double(x,y);
+		tempPoint = transform.transform(tempPoint, null);
+		AffineTransform rotation = new AffineTransform();
+		rotation.rotate(degs * java.lang.Math.PI / 180.0);
+		toDraw.setFont(toDraw.getFont().deriveFont(rotation));
+		toDraw.drawString(str, (int)tempPoint.getX(), (int)tempPoint.getY());
+		toDraw.setFont(nonScaledFont.deriveFont(transform));
+	}
 	public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle){ //fillArc
 		if (toDraw == null || transform == null) throw new IllegalArgumentException("You must call init(Graphics) before you can start drawing");
 		tempPoint = new Point2D.Double(x, y);
@@ -310,6 +320,14 @@ public class Scalable{
 		coord[0] = -e.getX() + coord[0];
 		coord[1] = -e.getY() + coord[1];
 		e.translatePoint(coord[0], coord[1]);
+	}
+	public Rectangle scaleRect(Rectangle rect){
+		int[] newPoint = getCoord(new int[] {rect.getX(), rect.getY()});
+		rect.setX(newPoint[0]);
+		rect.setY(newPoint[1]);
+		rect.setWidth((int)(rect.getWidth()*scaleX));
+		rect.setHeight((int)(rect.getHeight()*scaleY));
+		return rect;
 	}
 	
 	//bitwise manipulations

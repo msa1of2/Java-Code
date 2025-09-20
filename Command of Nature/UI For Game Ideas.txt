@@ -1,0 +1,5 @@
+- Card view on 1st layer - Desc. appears in full view - Alt: Card Desc, Name, and Stats appear after hovering over it for a period of time next to the mouse (bounded to the screen)
+  - Numbers on the bottom - 2 ways to display info: color in the valid values, others are gray; have the valid values show up but omit the invalid ones
+- Main board as shown in the 2nd Layer
+- Shop screen 3rd Layer - hover areas to draw either the friendly board, or the enemy board / formation
+- 
