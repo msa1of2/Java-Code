@@ -204,7 +204,7 @@ public final class ConnectionHandler implements Closeable{
 	}
 	
 	//Gets the byte array of this computer's ip address
-	public byte[] getLocalAddress(){
+	public static byte[] getLocalAddress(){
 		try{
 			return InetAddress.getLocalHost().getAddress();
 		}
