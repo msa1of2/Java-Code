@@ -95,11 +95,11 @@ public class Screen extends JPanel implements MouseListener, MouseWheelListener,
 		this.addMouseListener(testing);
 		this.addMouseMotionListener(testing);
 		*/
-		/*hf = new HeightFluids(5, 5);
-		hf.add(2, 2, 1000);*/
+		hf = new HeightFluids(5, 5);
+		hf.add(2, 2, 1000);
 		
-		s = new Scalable(800, 600);
-		s.preserveAspectRatio(true);
+		//s = new Scalable(800, 600);
+		//s.preserveAspectRatio(true);
 		/*test = new JButton("TEst");
 		test.setBounds(300, 100, 100, 100);
 		add(test);*/
@@ -110,7 +110,7 @@ public class Screen extends JPanel implements MouseListener, MouseWheelListener,
 	public void paintComponent(Graphics g){
 		super.paintComponent(g);
 		
-		s.setBackgroundColor(Color.darkGray);
+		/*s.setBackgroundColor(Color.darkGray);
 		s.init(g);
 		//g.setColor(Color.darkGray);
 		//g.fillRect(0, 0, 800, 600);
@@ -135,14 +135,14 @@ public class Screen extends JPanel implements MouseListener, MouseWheelListener,
 		g.drawString("Test", 300, 300);
 		
 		//g.setFont(test2);
-		s.drawString("Test", 300, 300, 180);
+		s.drawString("Test", 300, 300, 180);*/
 		
-		//hf.draw(g, 0, 0, 800, 600);
+		hf.draw(g, 0, 0, 800, 600);
 		//testing.draw(g);
 	}
     public void mouseClicked(MouseEvent e) {
 		//testing.mouseClicked(e);
-		//hf.update();
+		hf.update();
 		repaint();
     }
     public void mousePressed(MouseEvent e) {
