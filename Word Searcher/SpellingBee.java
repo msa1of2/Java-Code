@@ -9,7 +9,7 @@ import java.util.HashSet;
 
 public class SpellingBee{
 	public static void main(String[] args){
-		if (args.length < 3){
+		if (args.length < 2){
 			System.out.println("Need 6 letters of the normal letters, then a space, then the special letter, space, word size (try 10)");
 			return;
 		}
@@ -19,9 +19,10 @@ public class SpellingBee{
 		}
 		char[] normalLetters = args[0].toLowerCase().toCharArray();
 		char usedLetter = args[1].toLowerCase().charAt(0);
-		int size = Integer.parseInt(args[2]);
+		int size = -1;
+		if (args.length >= 3) size = Integer.parseInt(args[2]);
 		
-		if (size < 4) return;
+		if (size < 4 && size != -1) return;
 		
 		new SpellingBee(normalLetters, usedLetter, size);
 	}
@@ -32,48 +33,58 @@ public class SpellingBee{
 	long start, end, loops;
 	int bigIncrement = 0;
 	public SpellingBee(char[] norm, char special, int size){
+		boolean loadAll = (size == -1); //simple boolean, records if its a set size or all the sizes
+		//load all the characters into an easy to access list
 		charIndex = new char[7];
 		System.arraycopy(norm, 0, charIndex, 0, 6);
 		charIndex[6] = special;
 		
+		//Get all the words in the data structure and what we'll send back to the user
 		trie = WordSearcher.read();
 		words = new HashSet<>();
 		
-		wheel = new byte[size+1]; //Antinationalization is longest 7 letter word found
-		for (int i=0;i<wheel.length;i++){
-			wheel[i] = -1;
-		}
-		for (int i=0;i<4;i++){wheel[i]=0;} //sets the first 4 numbers to 0
-		
 		System.out.println("Searching for words with: " + new String(charIndex));
 		
-		start = Clock.systemUTC().millis();
+		start = Clock.systemUTC().millis(); //Start the clock
+		
+		
+		//Create the wheel which holds the indexes of all the characters of the word
+		wheel = new byte[size+1]; //Antinationalization (19) is longest 7 letter word found
+		for (int i=0;i<wheel.length;i++){
+			wheel[i] = -1; //no letter in these positions, marked with the negative value
+		}
+		for (int i=0;i<4;i++){wheel[i]=0;} //sets the first 4 numbers to 0, they have to be usable
+		
 		String attempt;
 		while (wheel[size] == -1){ //will get changed as soon as it reaches the end of the list
 			
-			if (wheel[0] == 6 && makeWord(wheel).length() <= 4) System.out.println(trueWheel() + ", " + getWheel());
+			//if (wheel[0] == 6 && makeWord(wheel).length() <= 4) System.out.println(trueWheel() + ", " + getWheel());
 			loops++;
-			boolean end = false;
-			for (int i=1;i<wheel.length;i++){
-				if (wheel[i] == -1) break;
+			//boolean end = false;
+			
+			/*for (int i=0;i<wheel.length;i++){ //go through the entire possible word
+				if (wheel[i] == -1) break; //no more letters to add
 				//System.out.print(wheel[i+1] + "--" + i + ", ");
-				if (!trie.branchesExist(makeWord(wheel, i))){
+				if (!trie.branchesExist(makeWord(wheel, i))){ //checks if the branches exist 
 					//System.out.println("Failed: " + getWheel() + ", [" + i + "], " + makeWord(wheel, i) + " <" + loops + ">");
 					increment(i);
-					end = true;
+					end = true; //small optimization
 					break;
 				}
-			}
+			}*/
 			
 			increment(0);
 			checkForSpecial();
 			
-			if (end || !trie.wordExists(makeWord(wheel))) continue;
+			attempt = makeWord(wheel);
+			
+			if (!trie.wordExists(attempt)) continue;
 			words.add(makeWord(wheel));
 			
-			System.out.println("New word: " + makeWord(wheel) + ", " + loops + ", " + trueWheel());
+			//System.out.println("New word: " + attempt + ", " + loops + ", " + trueWheel());
 			
 		}
+		
 		end = Clock.systemUTC().millis();
 		
 		
@@ -86,7 +97,7 @@ public class SpellingBee{
 		if (index < 0 || index >= wheel.length) return;
 		if (index > bigIncrement){
 			bigIncrement = index;
-			System.out.println(bigIncrement + ", next up");
+			System.out.println(bigIncrement + ", next up, Time Taken so far: " + (Clock.systemUTC().millis()-start) + "ms");
 		}
 		wheel[index]++;
 		if (wheel[index] >= 7){

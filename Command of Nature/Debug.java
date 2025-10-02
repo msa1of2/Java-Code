@@ -39,6 +39,8 @@ public class Debug extends JPanel{
 		s.setBackgroundColor(Color.darkGray);
 		
 		test = new Card("Test", 1, 2, 3, Card.ROWI , 5, Card.Element.DROPLET, null);
+		test.deltaBoost(1);
+		test.deltaShield(2);
 	}
 	
 	public void paintComponent(Graphics g){ //draw screen

@@ -304,18 +304,20 @@ public class Screen extends JPanel implements KeyListener, MouseListener, Window
 		s.convertMouseEvent(e);
 		
 		//Menu Traversal stuffs
-		if (singlePlayer.isClicked(e) && menus[0].isVisible()){
+		//Menus[0] is the user choosing multiplayer or single player mode
+		if (singlePlayer.isClicked(e) && menus[0].isVisible()){ //opted for single player
 			menuOrder.add(1);
 			menus[0].goTo(menus[1]);
 		}
-		else if (multiPlayer.isClicked(e) && menus[0].isVisible()){
+		else if (multiPlayer.isClicked(e) && menus[0].isVisible()){ //opted for multiplayer
 			menuOrder.add(2);
 			menus[0].goTo(menus[2]);
 		}
+		//They have chosen Multiplayer and now have decided to host the game
 		else if (host.isClicked(e) && menus[2].isVisible()){
 			menuOrder.add(3);
 			menus[2].goTo(menus[3]);
-			
+			//Starts up the server
 			serverHolder = new Server();
 			serverRunner = new Thread(serverHolder);
 			serverRunner.start();
@@ -327,9 +329,11 @@ public class Screen extends JPanel implements KeyListener, MouseListener, Window
 			catch (Exception ex){
 				ex.printStackTrace();
 			}*/
+			//and the client - makes it really easy to convert into multiplayer game if the host is also connecting in the same way
 			ch = new ConnectionHandler("127.0.0.1", false, 4, getName());
 			//serverHolder.die();
 		}
+		//Player instead has opted to join an active server and has typed the IP into the text box
 		else if (join.isClicked(e) && menus[2].isVisible()){ //clicking on the join button while its visible
 			if (getIP() != null){
 				menuOrder.add(7);
@@ -341,7 +345,7 @@ public class Screen extends JPanel implements KeyListener, MouseListener, Window
 				errorMessage = "No IP currently looking for players";
 			}
 		}
-		
+		//User has pressed an incorrect button and was taken to a point they did not intend to reach - valid on all menus
 		else if (back.isClicked(e)){
 			
 			//leaving the server after creating it

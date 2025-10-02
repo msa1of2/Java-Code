@@ -147,8 +147,12 @@ public class Card{
 		return this.sprite;
 	}
 	
-	//Draws the current card to the screen at (x,y) with a height of height and width of 2/3 * height
 	public void draw(Scalable s, int x, int y, int height){
+		draw(s, x, y, height, true);
+	}
+	
+	//Draws the current card to the screen at (x,y) with a height of height and width of 2/3 * height
+	public void draw(Scalable s, int x, int y, int height, boolean drawGold){
 		int width = height*2/3;
 		//Draw the background of the card
 		s.setColor(type.bkg);
@@ -156,9 +160,9 @@ public class Card{
 		
 		//Draw the background images
 		s.drawImage(atkImg, x, y, height/5, height/5, null);
-		s.drawImage(boostImg, x, y+height/5, height/5, height/5, null);
+		if (this.boost != 0) s.drawImage(boostImg, x, y+height/5, height/5, height/5, null);
 		s.drawImage(hpImg, x+width-height/5, y, height/5, height/5, null);
-		s.drawImage(shieldImg, x+width-height/5, y+height/5, height/5, height/5, null);
+		if (this.shield != 0) s.drawImage(shieldImg, x+width-height/5, y+height/5, height/5, height/5, null);
 		
 		//Draw the valid row activations
 		s.setColor(new Color(192, 192, 192, 206));
@@ -172,9 +176,30 @@ public class Card{
 		if ((rowActivation & ROWIII) == 0) s.fillRect(x+height/40+height*2/5, y+height-height/5, height/4, height/5);
 		
 		
+		
 		//Draw the numbers and name of the card
 		s.setColor(Color.black);
-		if (height < 200){
+		numberFontSizes.setBounds(height/5, height/5);
+		s.setFont(new Font("Arial", Font.BOLD, numberFontSizes.getFontSize(s)));
+		Drawer.drawCenteredStackString(s, this.attack + "", x+width*3/20, y+height/24, height/7);
+		if (this.boost != 0) Drawer.drawCenteredStackString(s, this.boost + "", x+width*3/20, y+height*6/24, height/7);
+		Drawer.drawCenteredStackString(s, this.health + "", x+width*17/20, y+height/24, height/7);
+		if (this.shield != 0) Drawer.drawCenteredStackString(s, this.shield + "", x+width*17/20, y+height*6/24, height/7);
+		//Draw the cost of the card
+		if (drawGold){
+			s.setColor(new Color(0xd5b60a));
+			s.fillOval(x+width*7/20-height/70, y+height/5-height/35, height/5+height/35, height/5+height/35);
+			
+			s.setColor(Color.yellow);
+			s.fillOval(x+width*7/20, y+height/5-height/70, height/5, height/5);
+			
+			s.setColor(Color.black);
+			Drawer.drawCenteredStackString(s, this.cost + "", x+width/2, y+height/24+height/5, height/7);
+		}
+		
+		if (height < 200){ //small card
+			
+			
 			nameFontSize.setBounds(width-4, height*2/5);
 			s.setFont(new Font("Arial", Font.PLAIN, nameFontSize.getFontSize(s)));
 			Drawer.drawCenteredStackString(s, name, x+width/2, y+(int)(height*2.5/5), width);
@@ -182,20 +207,13 @@ public class Card{
 		else{
 			nameFontSize.setBounds(width-height*2/5, height*2/5);
 			s.setFont(new Font("Arial", Font.PLAIN, nameFontSize.getFontSize(s)));
-			Drawer.drawCenteredStackString(s, name, x+height*13/40, y+5, width);
+			Drawer.drawCenteredStackString(s, name, x+height*13/40, y+height/25, width);
 		}
-		
-		numberFontSizes.setBounds(height/5, height/5);
-		s.setFont(new Font("Arial", Font.BOLD, numberFontSizes.getFontSize(s)));
-		Drawer.drawCenteredStackString(s, this.attack + "", x+width*3/20, y+height/24, height/7);
-		Drawer.drawCenteredStackString(s, this.boost + "", x+width*3/20, y+height*6/24, height/7);
-		Drawer.drawCenteredStackString(s, this.health + "", x+width*17/20, y+height/24, height/7);
-		Drawer.drawCenteredStackString(s, this.shield + "", x+width*17/20, y+height*6/24, height/7);
 		
 		//Draw the main sprite when the card is big enough to appreciate the art
 		if (height >= 200){
 			if (sprite!= null){
-				
+				s.drawImage(sprite, x+height*3/20, y+height*2/5, height/5, height/5, null);
 			} 
 			else{
 				s.setColor(Color.magenta);
