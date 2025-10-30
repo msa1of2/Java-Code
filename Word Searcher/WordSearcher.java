@@ -1,4 +1,5 @@
 import helpful.datastructures.*;
+import helpful.GUI.*;
 import helpful.*;
 
 import java.util.Scanner;
@@ -31,6 +32,7 @@ import java.awt.event.ActionListener;
 class WordSearcher extends JPanel implements MouseListener, MouseWheelListener, ActionListener{
 	private Data[] found;
 	private JTextField search;
+	private Rectangle searchRect;
 	private Button searchButton;
 	private ScrollBar wordHeight;
 	private Trie words;
@@ -38,6 +40,7 @@ class WordSearcher extends JPanel implements MouseListener, MouseWheelListener, 
 	private TextFitter charSize, wordDisplay[];
 	private Data focus;
 	private int focusIndex;
+	private Scalable g;
 	public static void main(String[] args){
 		/*TODO:
 		 * Display the letters full uppercase
@@ -108,6 +111,7 @@ class WordSearcher extends JPanel implements MouseListener, MouseWheelListener, 
 		found = searchForWords(words, grid);
 		
 		search = new JTextField("Search:");
+		searchRect = new Rectangle(600, 0, 170, 50);
 		search.setBounds(600, 0, 170, 50);
 		add(search);
 		search.addActionListener(this);
@@ -121,6 +125,10 @@ class WordSearcher extends JPanel implements MouseListener, MouseWheelListener, 
 		}
 		wordHeight = new ScrollBar(found.length);
 		wordHeight.setBackgroundColor(Color.black);
+		
+		g = new Scalable(800,600);
+		//g.preserveAspectRatio(true);
+		
 	}
 	public static String[] readGrid(){
 		String[] send = null;
@@ -176,16 +184,16 @@ class WordSearcher extends JPanel implements MouseListener, MouseWheelListener, 
 			for (int y=0;y<grid[0].length;y++){
 				//going through the entire grid positions
 				Trie.TrieIterator it = words.new TrieIterator();
-				char[] word = new char[Math.max(grid.length, grid[0].length)];
-				for (int direction=0;direction<7;direction++){
+				char[] word = new char[java.lang.Math.max(grid.length, grid[0].length)];
+				for (int direction=0;direction<8;direction++){
 					//going through every direction from this position
 					it = words.new TrieIterator();
 					it.next(grid[x][y]);
 					word[0] = grid[x][y];
 					int[] mults = getMults(direction);
+					//System.out.println(direction + ", " + mults[0] + ", " + mults[1]);
 					if (!inBounds(grid, x+mults[1], y+mults[0])) continue;
-					char nextChar = grid[x+mults[1]]
-					[y+mults[0]];
+					char nextChar = grid[x+mults[1]][y+mults[0]];
 					for(int step =2;it.hasNext(nextChar)&&step<100;step++){
 						//in each direction
 						if (it.next(nextChar)){
@@ -292,10 +300,18 @@ class WordSearcher extends JPanel implements MouseListener, MouseWheelListener, 
 	public Dimension getPreferredSize(){
         return new Dimension(800,600);
     }
-	public void paintComponent(Graphics g){
-		super.paintComponent(g);
+	public void paintComponent(Graphics s){
+		super.paintComponent(s);
+		
+		g.init(s);
+		
 		g.setColor(Color.black);
 		g.fillRect(0,0,800,600);
+		
+		//resizing the search field
+		Rectangle newSearchRect = g.scaleRect(searchRect);
+		//System.out.println(newSearchRect + "\n" + g + "\n" + searchRect);
+		search.setBounds(newSearchRect.getX(), newSearchRect.getY(), newSearchRect.getWidth(), newSearchRect.getHeight());
 		
 		//draw the highlight around the characters in the word
 		g.setColor(new Color(25, 225, 25));
@@ -304,7 +320,34 @@ class WordSearcher extends JPanel implements MouseListener, MouseWheelListener, 
 			int y = focus.getY()*600/grid.length+200/grid.length;
 			int endX = (focus.getX() + focus.getLength() * getMults(focus.getDirection())[0])*600/grid[0].length+200/grid[0].length;
 			int endY = (focus.getY() + focus.getLength() * getMults(focus.getDirection())[1])*600/grid.length+200/grid.length;
-			Drawer.drawLineThick(g, x, y, endX, endY, 600/grid[0].length);
+			int bigX = java.lang.Math.max(x, endX), smallX = java.lang.Math.min(x, endX);
+			int bigY = java.lang.Math.max(y, endY), smallY = java.lang.Math.min(y, endY);
+			if ((x < endX && y < endY) || (x>endX&&y>endY)){
+				//Diagonal
+				int[] xPoints = {(int)(bigX+300/grid[0].length*0.707), (int)(bigX-300/grid[0].length*0.707), (int)(smallX-300/grid[0].length*0.707), (int)(smallX+300/grid[0].length*0.707)};
+				int[] yPoints = {(int)(bigY-300/grid[0].length*0.707), (int)(bigY+300/grid[0].length*0.707), (int)(smallY+300/grid[0].length*0.707), (int)(smallY-300/grid[0].length*0.707)};
+				g.fillPolygon(xPoints, yPoints, 4);
+				g.setColor(Color.red);
+				Drawer.fillCenteredCircle(g, xPoints[0], yPoints[0], 5);
+				g.setColor(new Color(25, 225, 25));
+				//System.out.println(xPoints[0] + ", " + yPoints[0]);
+			}
+			else if ((x<endX||y<endY) && x!=endX && y!=endY){
+				int[] xPoints = {(int)(bigX+300/grid[0].length*0.707), (int)(bigX-300/grid[0].length*0.707), (int)(smallX-300/grid[0].length*0.707), (int)(smallX+300/grid[0].length*0.707)};
+				int[] yPoints = {(int)(smallY+300/grid[0].length*0.707), (int)(smallY-300/grid[0].length*0.707), (int)(bigY-300/grid[0].length*0.707), (int)(bigY+300/grid[0].length*0.707)};
+				g.fillPolygon(xPoints, yPoints, 4);
+			}
+			else if (endY == y && endX != x){ //Straight - X Axis
+				//Drawer.drawLineThick(g, smallX, y, endX, endY, 600/grid[0].length);
+				int[] xPoints = {smallX, smallX, bigX, bigX};
+				int[] yPoints = {y+300/grid[0].length, y-300/grid[0].length, y-300/grid[0].length, y+300/grid[0].length};
+				g.fillPolygon(xPoints, yPoints, 4);
+			}
+			else{
+				int[] xPoints = {x+300/grid[0].length, x-300/grid[0].length, x-300/grid[0].length, x+300/grid[0].length};
+				int[] yPoints = {smallY, smallY, bigY, bigY};
+				g.fillPolygon(xPoints, yPoints, 4);
+			}
 			Drawer.fillCenteredCircle(g, x, y, 300/grid[0].length);
 			Drawer.fillCenteredCircle(g, endX, endY, 300/grid[0].length);
 			//System.out.println(focus.getX() + ", " + focus.getY() + ", " + focus.getLength() + ", " + (focus.getY() + focus.getLength() * getMults(focus.getDirection())[0]) + ", " + (focus.getX() + focus.getLength() * getMults(focus.getDirection())[1]) + ", " + focus.getDirection());
@@ -345,9 +388,10 @@ class WordSearcher extends JPanel implements MouseListener, MouseWheelListener, 
     public void mouseClicked(MouseEvent e) {
     }
     public void mousePressed(MouseEvent e) {
+		g.convertMouseEvent(e);
 		if (e.getX() >= 600){
 			int y = (e.getY()-30)/50-1;
-			focusIndex = Math.min(y+wordHeight.getStep(), found.length-1);
+			focusIndex = java.lang.Math.min(y+wordHeight.getStep(), found.length-1);
 			focus = found[focusIndex];
 		}
 		repaint();

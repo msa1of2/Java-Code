@@ -1,8 +1,10 @@
 package helpful.datastructures;
-public class Trie{
+import java.util.Iterator;
+import java.io.Serializable;
+public class Trie implements Iterable<Boolean>, Serializable{
 	private TrieNode root;
 	private int wordCount; //for funsies
-	private static final boolean excludeSpace = false; //for your use to change in code
+	private static final boolean excludeSpace = true; //for your use to change in code
 	public Trie(String[] inputs){
 		this();
 		add(inputs);
@@ -13,10 +15,12 @@ public class Trie{
 	public void add(String[] inputs){ //add an array of strings
 		for (String item : inputs){
 			boolean res = add(item);
-			wordCount += res ? 1:0; //adding was successful, add to our word count (will count duplicates)
 		}
 	}
 	public int getWordCount(){
+		return this.wordCount;
+	}
+	public int size(){
 		return this.wordCount;
 	}
 	public boolean add(String item){
@@ -24,7 +28,7 @@ public class Trie{
 		char[] chars = item.toLowerCase().toCharArray(); //makes sure there aren't any weird edge cases with speical characters
 		//can remove if wanted from here 
 		for (char c : chars) {
-			if(!Character.isLetter(c) && (c!=' ' || excludeSpace)) {
+			if(!Character.isLetter(c) && (c!=' ')) {
 				return false;
 			}
 		} //to this line, all of it can go if you trust your source
@@ -36,7 +40,14 @@ public class Trie{
 		
 		if (remaining.length == 0){ //this is the last item to add 
 			current.setWord(true); //this sequence is a word
+			wordCount++;
 			return true; //no more letters to add
+		}
+		
+		if (remaining[0] == ' ' && excludeSpace){
+			char[] next = new char[remaining.length-1]; //set up the array for the next recursion step
+			System.arraycopy(remaining, 1, next, 0, next.length); //copys the remaining characters bar the first item into the array going deeper into recursion
+			return add(next, current); //recursion
 		}
 		
 		if (!current.hasNext(remaining[0])){ //first time adding this char to this node
@@ -55,7 +66,6 @@ public class Trie{
 	private TrieNode get(char[] remaining, TrieNode current){
 		if (remaining == null) return null; //remaining is wrong - one type of exit condition
 		if (current == null) return null; //the current node is wrong - null protection
-		
 		if (remaining.length == 1){ //this is the last item
 			return current.next(remaining[0]); //send the connection with that last item back
 		}
@@ -70,7 +80,11 @@ public class Trie{
 		if (temp == null) return false; //doesn't exist
 		return temp.isWord();
 	}
+	public boolean isWord(String item){
+		return wordExists(item);
+	}
 	public boolean branchesExist(String item){
+		if (item.length() <= 0) return false;
 		TrieNode temp = get(item);
 		if (temp == null) return false; //doesn't exist
 		return temp.hasAConnection();
@@ -80,7 +94,7 @@ public class Trie{
 		if (temp == null) return new boolean[2]; //auto fills with two falses
 		return new boolean[]{temp.isWord(), temp.hasAConnection()};
 	}
-	private class TrieNode{ //the nodes traversed by the Trie
+	public class TrieNode implements Serializable{ //the nodes traversed by the Trie
 		private TrieNode[] connections; //connections only go one way
 		private boolean isWord;
 		
@@ -95,17 +109,24 @@ public class Trie{
 				return;
 			}
 			//can't connect to existsing TrieNode, will always create a new one
+			if ((int)(connection)-97 >= 27) return;
 			connections[(int)(connection)-97] = new TrieNode(false); //char - 'a'
 		}
 		public void setWord(boolean isWord){
 			this.isWord = isWord;
 		}
 		public boolean hasNext(char item){
-			if (item == ' ' && !excludeSpace) return connections[26]!=null;
+			if (item == ' ') { 
+				if (!excludeSpace)
+					return connections[26]!=null;
+				else return false;
+			}
+			if ((int)(item)-97 >= 27) return false;
 			return connections[(int)(item)-97] != null;
 		}
 		public TrieNode next(char item){ //the TrieNode connected by this character
 			if (item == ' ' && !excludeSpace) return connections[26];
+			if ((int)(item)-97 >= 27) return null;
 			return connections[(int)(item)-97];
 		}
 		public boolean isWord(){
@@ -123,7 +144,49 @@ public class Trie{
 			for (TrieNode node : connections){
 				if (node != null) return true; //found a connection
 			}
-			return false; //all connections are false;
+			return false; //all connections are null;
+		}
+	}
+	public Iterator<Boolean> iterator(){
+		return new TrieIterator();
+	}
+	public String toString(){
+		return recursiveString("", root);
+	}
+	private String recursiveString(String line, TrieNode current){
+		if (current == null) return "";
+		String send = "";
+		if (current.isWord()) send += line + "\n";
+		for (int i=0;i<(26 + (excludeSpace ? 0:1));i++){
+			char item = (char)(i+97);
+			if (i == 26) item = ' '; //space
+			String next = line + item;
+			send += recursiveString(next, current.next(item));
+		}
+		return send;
+	}
+	public class TrieIterator implements Iterator<Boolean>, Serializable{
+		private TrieNode cursor = root;
+		public TrieIterator(){}
+		public Boolean next(){
+			cursor = cursor.next('a');
+			return cursor != null ? cursor.isWord() : false;
+		}
+		public boolean hasNext(){
+			return cursor != null ? cursor.hasNext('a') : false;
+		}
+		public boolean next(char item){
+			cursor = cursor.next(item);
+			return cursor != null ? (cursor.hasAConnection() || cursor.isWord()) : false;
+		}
+		public boolean hasNext(char item){
+			return cursor != null ? cursor.hasNext(item) : false;
+		}
+		public boolean isWord(){
+			return cursor != null ? cursor.isWord() : false;
+		}
+		public TrieNode get(){
+			return cursor;
 		}
 	}
 }

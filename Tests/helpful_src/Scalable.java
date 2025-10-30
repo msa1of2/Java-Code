@@ -17,7 +17,7 @@ public class Scalable{
 	private Graphics toDraw;
 	private Rectangle originalCanvas;
 	private double scaleX, scaleY;
-	private AffineTransform transform;
+	private AffineTransform transform, inverted;
 	private Color bkgColor = null;
 	private Font nonScaledFont;
 	
@@ -274,7 +274,7 @@ public class Scalable{
 	}
 	public String toString(){ //toString
 		if (toDraw == null || transform == null) throw new IllegalArgumentException("You must call init(Graphics) before you can start drawing");
-		return toDraw.toString();
+		return "<" + toDraw.toString() + ">, <" + transform.toString() + ">";
 	}
 	
 	public void preserveAspectRatio(boolean value){
@@ -293,22 +293,17 @@ public class Scalable{
 	public int[] getCoord(int[] originalCoord){
 		if (originalCoord.length < 2) throw new IllegalArgumentException("Coord list must be of length greater than or equal to 2");
 		try{
-			transform.invert();
+			inverted = transform.createInverse();
 		}
 		catch (java.awt.geom.NoninvertibleTransformException e){
 			return originalCoord;
 		}
 		
 		tempPoint = new Point2D.Double(originalCoord[0], originalCoord[1]);
-		tempPoint = transform.transform(tempPoint, null);
+		tempPoint = inverted.transform(tempPoint, null);
 		int[] send = new int[] {(int)tempPoint.getX(), (int)tempPoint.getY()};
 		
-		try{
-			transform.invert();
-		}
-		catch (java.awt.geom.NoninvertibleTransformException e){
-			return originalCoord;
-		}
+		
 		return send;
 	}
 	public int[] getCoord(MouseEvent e){
@@ -322,12 +317,15 @@ public class Scalable{
 		e.translatePoint(coord[0], coord[1]);
 	}
 	public Rectangle scaleRect(Rectangle rect){
-		int[] newPoint = getCoord(new int[] {rect.getX(), rect.getY()});
-		rect.setX(newPoint[0]);
+		//int[] newPoint = getCoord(new int[] {rect.getX(), rect.getY()});
+		Point2D newPoint = transform.transform(new Point2D.Double(rect.getX(), rect.getY()), null);
+		Rectangle send = new Rectangle((int)newPoint.getX(), (int)newPoint.getY(), (int)(rect.getWidth()*scaleX), (int)(rect.getHeight()*scaleY));
+		return send;
+		/*rect.setX(newPoint[0]);
 		rect.setY(newPoint[1]);
 		rect.setWidth((int)(rect.getWidth()*scaleX));
 		rect.setHeight((int)(rect.getHeight()*scaleY));
-		return rect;
+		return rect;*/
 	}
 	
 	//bitwise manipulations

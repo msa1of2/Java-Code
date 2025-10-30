@@ -79,6 +79,12 @@ public class Drawer{
             }
         }
     }
+	public static void fillCenteredCircle(Graphics g, int x, int y, int r){
+		g.fillOval(x-r, y-r, r<<1, r<<1); //Faster r*2
+	}
+	public static void fillCenteredCircle(Scalable s, int x, int y, int r){
+		s.fillOval(x-r, y-r, r<<1, r<<1);
+	}
 	//drawing a stacked string by checking if it ran out of width or \n is used and all its permutations
 	public static void drawStackString(Graphics g, String text, int x, int y, int width){
       	String[] toWrite = split(g, text, width);
@@ -106,6 +112,20 @@ public class Drawer{
 		y = y+(int)(g.getFontMetrics().getHeight()*(41.0/59));
 		for (int line=0;line<toWrite.length;line++){
 			g.drawString(toWrite[line], centerX - g.getFontMetrics().stringWidth(toWrite[line])/2, (int)(y - toWrite.length/2.0*g.getFontMetrics().getHeight() + line*(g.getFontMetrics().getHeight())+3 + g.getFontMetrics().getHeight()*(23.0/59)));
+		}
+	}
+	public static void drawAbsCenteredStackString(Graphics g, String text, int centerX, int centerY, int width){
+		String[] toWrite = split(g, text, width);
+		int y = centerY + g.getFontMetrics().getHeight()/2;
+		for (int line=0;line<toWrite.length;line++){
+			g.drawString(toWrite[line], centerX - g.getFontMetrics().stringWidth(toWrite[line])/2, (int)(y - toWrite.length/2.0*g.getFontMetrics().getHeight() + line*(g.getFontMetrics().getHeight())+3 + g.getFontMetrics().getHeight()*(23.0/59)));
+		}
+	}
+	public static void drawAbsCenteredStackString(Scalable g, String text, int centerX, int centerY, int width){
+		String[] toWrite = split(g, text, width);
+		int y = centerY + g.getFontMetrics().getHeight()/2;
+		for (int line=0;line<toWrite.length;line++){
+			g.drawString(toWrite[line], centerX - g.getFontMetrics().stringWidth(toWrite[line])/2, (int)(y - toWrite.length/2.0*g.getFontMetrics().getHeight() + line*(g.getFontMetrics().getHeight())+3 + g.getFontMetrics().getHeight()*(12.0/59)));
 		}
 	}
 	public static void drawBottomUpStackString(Graphics g, String text, int x, int bottomY, int width){
