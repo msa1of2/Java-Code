@@ -239,9 +239,11 @@ public final class ConnectionHandler implements Closeable{
 	//Gets the names of all the clients connected to this node, effectively returns the names of the client list
 	public String[] getClientNames(){
 		String[] send = new String[clientCount+1];
+		System.out.println("Count: " + clientCount);
 		int ind = 0;
 		for (Client cli : clients){
 			if (cli == null) continue;
+			System.out.println("Index adding to: " + ind);
 			send[ind++] = cli.username;
 		}
 		return send;
@@ -287,7 +289,7 @@ public final class ConnectionHandler implements Closeable{
 	
 	//On creating a new connection: - Override if you wish to change info sent at the beginning
 	public Packet onConnection(){
-		int clientCount =0;
+		int clientCount = 0;
 		for (Client cli : clients){
 			if (cli != null) clientCount++;
 		}
@@ -513,6 +515,7 @@ public final class ConnectionHandler implements Closeable{
 					}
 					Thread temp = new Thread(rec, "Server reciever - " + index);
 					//send the message of existance of this network
+					System.out.println("Connection start: " + onConnection());
 					listen.getOutputStream().write(onConnection().send(listen.getInetAddress(), listen.getPort(), listen.getLocalPort(), (byte)0, true, false, true, false, false)); //isComplete, isClosing, isNew, isPing, isEncrypted
 					//then save its data for ease of access, otherwise we'll be telling it about its own existance
 					clients[index] = new Client(listen, "Temp username", rec, temp, false);
@@ -525,6 +528,7 @@ public final class ConnectionHandler implements Closeable{
 					temp.start();
 					
 					threads.add(temp);
+					clientCount++;
 				}
 				catch (SocketException e){
 					close();
@@ -574,6 +578,7 @@ public final class ConnectionHandler implements Closeable{
 						end();
 						return;
 					}
+					System.out.println("Got Packet: " + temp.toString());
 					
 					//if the destination address is not us
 					if (!byteEquals(temp.getReceiverIP(), clients[0].IP)){
