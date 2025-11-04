@@ -475,7 +475,7 @@ public final class ConnectionHandler implements Closeable{
 			return false;
 		}
 		public int hashCode(){
-			return ByteTranslater.toShort(ByteTranslater.specificArray(IP, 3, 5));
+			return ByteTranslater.toShort(ByteTranslater.specificArray(IP, 3, 5))&0xffff; //to int without carrying over the damn negative sign and leading ones it entails
 		}
 		public String toString(){
 			return (client != null ? client.toString() + ", " : "") + (username!=null?username:"nullName") + ", " + receiver + ", " + (thread != null ? thread.getName() +", " : "" )+ "server?" + isServer + ", IP:" + ByteTranslater.toInt(IP) + " Port:" + ByteTranslater.toShort(IP,4);
@@ -685,13 +685,14 @@ public final class ConnectionHandler implements Closeable{
 						for (int i=1;i<clients.length;i++){
 							if (clients[i] == null) continue; //this space hasn't been filled yet
 							if (clients[i] == cli) continue; //it already knows of its own existance
+							System.out.println("Telling neighbors of existance of " + cli.toString() + ", server: " + clients[i].isServer + ", notify: " + notifyNetwork);
 							if (clients[i].isServer && !notifyNetwork) continue; //we're not going to notify the entire network of a new client, only the other clients nearby
 							temp.setRecieverHeader(clients[i].client.getInetAddress(), ByteTranslater.toShort(clients[i].IP,4)); //set the reciever of the packet to each individual client
 							clients[i].client.getOutputStream().write(temp.sendComplete()); //send the packet on its way
 						}
 						millisDiff.add(temp.getDelayMillis());
 					}
-					else{
+					else{ //Normal data, give to user
 						packetBuffer.add(temp);
 						millisDiff.add(packetBuffer.get(packetBuffer.size()-1).getDelayMillis());
 						if (packetBuffer.get(packetBuffer.size()-1).getBoolData()[0]){
