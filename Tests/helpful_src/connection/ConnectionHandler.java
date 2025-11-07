@@ -83,7 +83,6 @@ public final class ConnectionHandler implements Closeable{
 				System.arraycopy(InetAddress.getLocalHost().getAddress(), 0, ip, 0, 4);
 				System.arraycopy(ByteTranslater.toBytes((short)temp.getLocalPort()), 0, ip, 4, 2);
 				clients[0] = new Client(ip, name); //clients 0 is us
-				//System.out.println(temp.getLocalPort());
 				clients[1] = client; //this is the server we connected to
 				clients[1].isServer = true;
 				
@@ -239,11 +238,9 @@ public final class ConnectionHandler implements Closeable{
 	//Gets the names of all the clients connected to this node, effectively returns the names of the client list
 	public String[] getClientNames(){
 		String[] send = new String[clientCount+1];
-		System.out.println("Count: " + clientCount);
 		int ind = 0;
 		for (Client cli : clients){
 			if (cli == null) continue;
-			System.out.println("Index adding to: " + ind);
 			send[ind++] = cli.username;
 		}
 		return send;
@@ -413,7 +410,6 @@ public final class ConnectionHandler implements Closeable{
 	}
 	protected DLList<Client> getPathTo(String name){
 		Client complete = clientLookUp(name);
-		//System.out.println("\nDebug complete client from path viewer: " + complete + "\n\n");
 		if (complete == null) return null;
 		return conns.shortestPath(clients[0], complete);
 	}
@@ -461,7 +457,6 @@ public final class ConnectionHandler implements Closeable{
 				Client c = (Client)other;
 				if (byteEquals(c.IP, new byte[] {0,0,0,0,0,0})){
 					//using general equals for name lookup
-					//System.out.println("Client equals check: " + c.username + "=?=" + this.username + "=>" + c.username.equals(this.username) + ", " + c.username.length() + ", " + this.username.length());
 					return c.username.equals(this.username);
 				}
 				return byteEquals(c.IP, this.IP);
@@ -515,7 +510,6 @@ public final class ConnectionHandler implements Closeable{
 					}
 					Thread temp = new Thread(rec, "Server reciever - " + index);
 					//send the message of existance of this network
-					System.out.println("Connection start: " + onConnection());
 					listen.getOutputStream().write(onConnection().send(listen.getInetAddress(), listen.getPort(), listen.getLocalPort(), (byte)0, true, false, true, false, false)); //isComplete, isClosing, isNew, isPing, isEncrypted
 					//then save its data for ease of access, otherwise we'll be telling it about its own existance
 					clients[index] = new Client(listen, "Temp username", rec, temp, false);
@@ -523,12 +517,10 @@ public final class ConnectionHandler implements Closeable{
 					conns.add(clients[index]); //add it to the graph
 					conns.addEdge(clients[0], clients[index], 1); //connect the two on the network graph
 					
-					//System.out.println("Sending onConnection packet");
-					
 					temp.start();
 					
 					threads.add(temp);
-					clientCount++;
+					//clientCount++;
 				}
 				catch (SocketException e){
 					close();
@@ -578,7 +570,6 @@ public final class ConnectionHandler implements Closeable{
 						end();
 						return;
 					}
-					System.out.println("Got Packet: " + temp.toString());
 					
 					//if the destination address is not us
 					if (!byteEquals(temp.getReceiverIP(), clients[0].IP)){
@@ -623,7 +614,6 @@ public final class ConnectionHandler implements Closeable{
 							conns.addEdge(clients[1], cli, 1); //its guarenteed connected to the server, so show their connection
 							continue;
 						}
-						
 						
 						if (!cli.username.equals("Temp username")) continue; //Already saw this new user, can safely ignore it
 						
@@ -685,7 +675,6 @@ public final class ConnectionHandler implements Closeable{
 						for (int i=1;i<clients.length;i++){
 							if (clients[i] == null) continue; //this space hasn't been filled yet
 							if (clients[i] == cli) continue; //it already knows of its own existance
-							System.out.println("Telling neighbors of existance of " + cli.toString() + ", server: " + clients[i].isServer + ", notify: " + notifyNetwork);
 							if (clients[i].isServer && !notifyNetwork) continue; //we're not going to notify the entire network of a new client, only the other clients nearby
 							temp.setRecieverHeader(clients[i].client.getInetAddress(), ByteTranslater.toShort(clients[i].IP,4)); //set the reciever of the packet to each individual client
 							clients[i].client.getOutputStream().write(temp.sendComplete()); //send the packet on its way
