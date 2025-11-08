@@ -28,8 +28,10 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyListener;
+import java.awt.event.KeyEvent;
 
-class WordSearcher extends JPanel implements MouseListener, MouseWheelListener, ActionListener{
+class WordSearcher extends JPanel implements MouseListener, KeyListener, MouseWheelListener, ActionListener{
 	private Data[] found;
 	private JTextField search;
 	private Rectangle searchRect;
@@ -41,6 +43,7 @@ class WordSearcher extends JPanel implements MouseListener, MouseWheelListener, 
 	private Data focus;
 	private int focusIndex;
 	private Scalable g;
+	private static String[] interest;
 	public static void main(String[] args){
 		/*TODO:
 		 * Display the letters full uppercase
@@ -52,6 +55,7 @@ class WordSearcher extends JPanel implements MouseListener, MouseWheelListener, 
 			String gridLine = "";
 			boolean addToGrid = true;
 			send.add(args);
+			interest = args;
 			try { //if there are extra words to add
 				Scanner scan = new Scanner(new FileReader("words.txt"));
 				//reads the words
@@ -77,8 +81,16 @@ class WordSearcher extends JPanel implements MouseListener, MouseWheelListener, 
         JFrame frame = new JFrame("Screen");
         frame.add(screen);
 		
+		frame.setFocusable(true);
+		screen.setFocusable(true);
+		screen.requestFocusInWindow();
+		
 		frame.addMouseListener(screen);
 		frame.addMouseWheelListener(screen);
+		frame.addKeyListener(screen);
+		
+		frame.setFocusTraversalKeysEnabled(false);
+		
 		
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
@@ -109,6 +121,10 @@ class WordSearcher extends JPanel implements MouseListener, MouseWheelListener, 
 		}
 		
 		found = searchForWords(words, grid);
+		for (String item : interest){
+			Data out = find(item);
+			System.out.println(out == null ? item + " was not found" : out.toFullString());
+		}
 		
 		search = new JTextField("Search:");
 		searchRect = new Rectangle(600, 0, 170, 50);
@@ -220,6 +236,44 @@ class WordSearcher extends JPanel implements MouseListener, MouseWheelListener, 
 		}
 		return send;
 	}
+	public Data findWithin(String word, int count){
+		for (int x=0;x<grid.length;x++){
+			for (int y=0;y<grid.length;y++){
+				if (grid[x][y] != word.toCharArray()[0]) continue; //first character wrong, dont waste time
+				for (int direction=0;direction<8;direction++){ //first char right, look for next chars
+					int[] mults = getMults(direction);
+					if (!inBounds(grid, x+mults[1], y+mults[0])) continue;
+					for (int step=1;step<word.length();step++){
+						if (grid[x+mults[1]*step][y+mults[0]*step] != word.charAt(step)) break; //char wrong after stepping through, move on to next direction
+						if (step == word.length()-1){
+							count--;
+							//correct value, return info
+							if (count <= 0)return new Data(y, x, direction, step, true, word);
+						}
+					}
+				}
+			}
+		}
+		return new Data(0, 0, 0, 0, false, word);
+	}
+	public Data find(String word){
+		if (found == null) return new Data(-1, -1, -1, -1, false, word);
+		int left = 0;
+		int right = found.length;
+		int mid = 0;
+		int val = 0;
+		int count = 0;
+		while (left < right && count < 100){
+			mid = (left+right)/2;
+			val = found[mid].getWord().compareTo(word);
+			//System.out.println(val + ", " + word + ", " + found[mid].getWord());
+			if (val == 0) return found[mid];
+			else if (val < 0) left = mid;
+			else right = mid;
+			count++;
+		}
+		return null;
+	}
 	public static boolean inBounds(char[][] grid, int x, int y){
 		return x>=0 && x<grid.length && y>=0 && y <grid[0].length;
 	}
@@ -288,13 +342,16 @@ class WordSearcher extends JPanel implements MouseListener, MouseWheelListener, 
 				Data o = (Data)other;
 				return o.getWord().equals(word);
 			}
+			if (other instanceof String){
+				return other.equals(word);
+			}
 			return false;
 		}
 		public String toString(){
 			return word;
 		}
 		public String toFullString(){
-			return "Data at: (" + y + "," + x +"), Direction: " + toEnglishDir(dir) + ", word: " + word;
+			return "Data at: (" + x + "," + y +"), Direction: " + toEnglishDir(dir) + ", word: " + word + ", found: " + found;
 		}
 	}
 	public Dimension getPreferredSize(){
@@ -315,7 +372,7 @@ class WordSearcher extends JPanel implements MouseListener, MouseWheelListener, 
 		
 		//draw the highlight around the characters in the word
 		g.setColor(new Color(25, 225, 25));
-		if (focus != null){
+		if (focus != null ? focus.isFound() : false){
 			int x = focus.getX()*600/grid[0].length+200/grid[0].length;
 			int y = focus.getY()*600/grid.length+200/grid.length;
 			int endX = (focus.getX() + focus.getLength() * getMults(focus.getDirection())[0])*600/grid[0].length+200/grid[0].length;
@@ -351,6 +408,14 @@ class WordSearcher extends JPanel implements MouseListener, MouseWheelListener, 
 			Drawer.fillCenteredCircle(g, x, y, 300/grid[0].length);
 			Drawer.fillCenteredCircle(g, endX, endY, 300/grid[0].length);
 			//System.out.println(focus.getX() + ", " + focus.getY() + ", " + focus.getLength() + ", " + (focus.getY() + focus.getLength() * getMults(focus.getDirection())[0]) + ", " + (focus.getX() + focus.getLength() * getMults(focus.getDirection())[1]) + ", " + focus.getDirection());
+		}
+		
+		if (focus != null ? !focus.isFound() : false){
+			g.setColor(Color.red);
+			g.fillRect(0, 0, 600, 600);
+			focus = null;
+			focusIndex = 0;
+			focus = found[focusIndex];
 		}
 		
 		//draw the grid
@@ -402,6 +467,25 @@ class WordSearcher extends JPanel implements MouseListener, MouseWheelListener, 
     }
     public void mouseExited(MouseEvent e) {
     }
+	public void keyPressed(KeyEvent e){
+		if (e.getKeyCode() == KeyEvent.VK_UP){
+			focusIndex--;
+			if (focusIndex < 0) focusIndex = found.length-1;
+			wordHeight.setStep(focusIndex);
+			focus = found[focusIndex];
+		}
+		if (e.getKeyCode() == KeyEvent.VK_DOWN){
+			focusIndex++;
+			if (focusIndex >= found.length) focusIndex = 0;
+			wordHeight.setStep(focusIndex);
+			focus = found[focusIndex];
+		}
+		repaint();
+	}
+	public void keyReleased(KeyEvent e){
+	}
+	public void keyTyped(KeyEvent e){
+	}
 	public void mouseWheelMoved(MouseWheelEvent e) {
 		wordHeight.click(e);
 		repaint();
@@ -413,8 +497,15 @@ class WordSearcher extends JPanel implements MouseListener, MouseWheelListener, 
 					focusIndex = i;
 					focus = found[i];
 					wordHeight.setStep(i);
+					repaint();
+					return;
 				}
 			}
+			//Was not able to find entry, search the grid for the item not in the list
+			Data temp = findWithin(search.getText(), focusIndex>=0 ? 1 : -focusIndex+1);
+			focus = temp;
+			focusIndex = focusIndex>=0 ? -1 : focusIndex-1;
+			if (temp.isFound()) wordHeight.setStep(0);
 		}
 		repaint();
 	}
