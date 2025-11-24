@@ -726,4 +726,107 @@ public final class ConnectionHandler implements Closeable{
 			return send / millisDiff.capacity();
 		}
 	}
+	protected class Broadcaster implements Runnable{
+		private DatagramSocket socket;
+		private static final InetAddress ADDR = InetAddress.getByName("255.255.255.255");
+		private static final int WAIT_TIME = 250, BROADCAST_COUNT = 12;
+		private DatagramPacket packet;
+		private boolean sender, running;
+		private String match;
+		
+		public Broadcaster(int port, byte[] message){ //constructs a caster to broadcast message to every computer on the network to the specified port
+			socket = new DatagramSocket();
+			socket.setBroadcast(true)
+			packet = new DatagramPacket(message, message.length, ADDR, port);
+			sender = true;
+		}
+		public Broadcaster(int port, String match, String description){ //constructs a caster to catch messages coming for specified port
+			socket = new DatagramSocket(port);
+			packet = new DatagramPacket(new byte[63], 63);
+			sender = false;
+			running = true;
+			this.match = match;
+		}
+		
+		public void run(){
+			if (sender){
+				for (int count =0;count<BROADCAST_COUNT;count++){
+					try{
+						Thread.sleep(WAIT_TIME);
+					}
+					catch(InterruptedException ex){
+						Thread.currentThread().interrupt();
+					}
+					socket.send(packet);
+				}
+			}
+			else{
+				while(running){
+					socket.recieve(packet);
+					if (!this.match.equals(new String(packet.getData(), Packet.HEADERSIZE+26, 26))){
+						//item sending this packet wasn't intending to talk to us, ignore
+						continue;
+					}
+					//intended to talk to us, send TCP connect request, send descriptive data, close connection
+					byte[] ipAddr = ByteTranslater.subArray(packet.getData(), Packet.IPSENDERSTART, 4);
+					Socket temp = new Socket(InetAddress.getByAddress(ipAddr), 2051);
+					Packet tempPacket = new Packet(9+descriptions.toBytes().length); //4 + 4 + 1 + desc.size
+					tempPacket.add(ByteTranslater.toBytes(clientCount)); //number of clients connected in
+					tempPacket.add(ByteTranslater.toBytes(clients.length));
+					tempPacket.add((byte)description.toBytes().length);
+					tempPacket.add(description.toBytes());
+					temp.getOutputStream().write(tempPacket.send(InetAddress.getByAddress(ipAddr), 2051, 2051, (byte)0, true, true, false, true, false)); //Complete, Closing, No New Connection, Ping, Not Encrypted
+					temp.close();
+				}
+			}
+		}
+		
+		public void close(){
+			socket.close()
+			running = false
+		}
+	}
+	protected class BroadcastClientReciever implements Runnable{
+		private ServerSocket server;
+		private DLList<ServerInfo> serverData;
+		private boolean running;
+		public BroadcastClientReciever(DLList<ServerInfo> listOut){
+			this.serverData = listOut
+			this.server = new ServerSocket(2051);
+			this.running = true;
+		}
+		public void run(){
+			while (running){
+				try{
+					Thread.sleep(50);
+				}
+				catch (InterruptedException ex){
+					Thread.currentThread().interrupt();
+				}
+				Socket listen = server.accept();
+				Packet temp = Packet.read(listen.getInputStream());
+				ServerInfo data = new ServerInfo(temp.getData());
+				serverData.add(data)
+			}
+		}
+	}
+	protected class ServerInfo{
+		private int clientCount, maxClientCount;
+		private String description;
+		public ServerInfo(byte[] vals){
+			this.clientCount = ByteTranslater.toInt(vals, 0);
+			this.maxClientCount = ByteTranslater.toInt(vals, 4);
+			this.description = new String(vals, 9, vals[8]);
+			
+		}
+		public int getClientCount(){
+			return this.clientCount;
+		}
+		public int getMaxCount(){
+			return this.maxClientCount;
+		}
+		public String getDescription(){
+			return this.description;
+		}
+	}
 }

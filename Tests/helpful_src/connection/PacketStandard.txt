@@ -38,6 +38,25 @@ Error codes:
 100 - Destination full - triggered if trying to connect to a server that doesn't have the client space for you
 404 - destination not found - Contains header of failed packet in data section
 
+
+Broadcast things:
+Client - sends broadcast 3 times @ 4/s (2050)
+Server - receives broadcast, sends connection @ 2051 - transmit data about server - close connection - both know each other's ip
+Inital ping broadcast: [standardHeader (to=0) ([20]=10010=true,false,false,true,false)] data:
+[0-25] name - 26 low precision chars
+[26-51] looking for server name - server has descriptive name of what it offers
+
+Server hears broadcast, sends connection to 2051 of client
+[standardHeader (to=client) ([20]=10010)] data:
+[0-3] - current client count
+[4-7] - Maximum client count
+[8] - description size
+[9-[4]+9] - description in low chars
+close()
+
+Client then chooses to connect / not connect to any / all servers that responded
+
+
 Notes:
 9500, ├
 9474, │
