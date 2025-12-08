@@ -35,9 +35,17 @@ public class Heap<E extends Comparable<E>> implements Iterable<E>{
     private void swapDown(int index){
         int left = index*2+1;
         int right = index*2+2;
-        if (left >= items.size() || right >= items.size()){
+        if (right > items.size()){
             return; //nowhere to swap to
         }
+		if (left == items.size()-1){//swap down with left if value allows
+			if (items.get(index).compareTo(items.get(left)) > 0){
+				E temp = items.get(left);
+				items.set(left, items.get(index));
+				items.set(index, temp);
+			}
+			return; //we are at the edge of the list, guarenteed to not have any children
+		}
         if (items.get(right).compareTo(items.get(left)) >= 0){
             E temp = items.get(left);
             items.set(left, items.get(index));

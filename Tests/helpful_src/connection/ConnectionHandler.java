@@ -9,10 +9,11 @@ import helpful.datastructures.Graph;
 
 public final class ConnectionHandler implements Closeable{
 	private boolean isServer, isConnected, isNetwork, voidBuffer, notifyNetwork; //void buffer only works when a message listener is set up - it wont add to the buffer when true
+	private boolean broadcastConnect; //Used to determine if broadcast server/receiver should be set up
 	private Client client;
 	private Client[] clients;
 	private ServerSocket server;
-	private Thread listener;
+	private Thread listener, broadcast, broadcastReciever;
 	private DLList<byte[]> buffer;
 	private DLList<Thread> threads;
 	private Receiver runner;
@@ -21,7 +22,9 @@ public final class ConnectionHandler implements Closeable{
 	private int maxClientCount, clientCount; //number of clients that need to be connected for a full connection
 	private Graph<Client> conns;
 	private MessageListener ML; //event listener to be notified on every message we're sent
-	
+	private Broadcaster broadcaster;
+	private BroadcastClientReciever broadcasterReciever;
+	private DLList<ServerInfo> infos;
 	
 	/* TODO:
 	 * comment the hell out of this
@@ -35,6 +38,7 @@ public final class ConnectionHandler implements Closeable{
 			}
 			
 			this.isServer = isServer;
+			this.broadcastConnect = false;
 			this.errorMessage = "";
 			this.threads = new DLList<Thread>();
 			this.clientCount = 1; //clients[0] aka us counts as a client
@@ -115,6 +119,43 @@ public final class ConnectionHandler implements Closeable{
 	public String getError(){
 		String send = errorMessage;
 		errorMessage = "";
+		return send;
+	}
+	//Sets up broadcast connection mode including corresponding threads
+	public void setBroadcastClient(String projectName){
+		this.broadcastConnect = true;
+		this.infos = new DLList<ServerInfo>();
+		this.broadcaster = new Broadcaster(2050, ByteTranslater.toSmallBytes(projectName.toCharArray()));
+		this.broadcasterReciever = new BroadcastClientReciever(infos);
+		
+		this.broadcastReciever = new Thread(this.broadcasterReciever);
+		this.broadcastReciever.start();
+		broadcastClient(); //sends the client side of things
+	}
+	//Sets up broadcast server side connection and corresponding threads
+	public void setBroadcastServer(String projectName, String serverDescription){
+		this.broadcastConnect = true;
+		this.broadcaster = new Broadcaster(2050, projectName, serverDescription);
+		
+		this.broadcast = new Thread(this.broadcaster);
+		
+		this.broadcast.start();
+	}
+	
+	//Broadcast functions
+	public void broadcastClient(){
+		this.broadcast = new Thread(this.broadcaster);
+		
+		this.broadcast.start();
+	}
+	public DLList<ServerInfo> getServers(){
+		return infos;
+	}
+	public String getServersString(){
+		String send = "";
+		for (ServerInfo item : infos){
+			send += item.toString() + "\n";
+		}
 		return send;
 	}
 	
@@ -276,6 +317,10 @@ public final class ConnectionHandler implements Closeable{
 			catch(IOException ex){
 				ex.printStackTrace();
 			}
+		}
+		if (this.broadcastConnect){
+			if (this.broadcaster != null) this.broadcaster.close();
+			if (this.broadcasterReciever != null) this.broadcasterReciever.close();
 		}
 	}
 	//Returns true if the connection handler's socket has closed
@@ -728,24 +773,52 @@ public final class ConnectionHandler implements Closeable{
 	}
 	protected class Broadcaster implements Runnable{
 		private DatagramSocket socket;
-		private static final InetAddress ADDR = InetAddress.getByName("255.255.255.255");
+		//try{
+			private static final InetAddress ADDR= GET_ADDR();
+		//}
+		//catch (Exception ex){
+		//	ex.printStackTrace();
+		//}
 		private static final int WAIT_TIME = 250, BROADCAST_COUNT = 12;
 		private DatagramPacket packet;
 		private boolean sender, running;
-		private String match;
+		private String match, description;
 		
-		public Broadcaster(int port, byte[] message){ //constructs a caster to broadcast message to every computer on the network to the specified port
-			socket = new DatagramSocket();
-			socket.setBroadcast(true)
-			packet = new DatagramPacket(message, message.length, ADDR, port);
-			sender = true;
+		public Broadcaster(int port, byte[] match){ //constructs a caster to broadcast message to every computer on the network to the specified port
+			try{
+				socket = new DatagramSocket();
+				socket.setBroadcast(true);
+				packet = new DatagramPacket(match, match.length, ADDR, port);
+				sender = true;
+				//ADDR = InetAddress.getByName("255.255.255.255");
+			}
+			catch(Exception ex){
+				ex.printStackTrace();
+			}
 		}
 		public Broadcaster(int port, String match, String description){ //constructs a caster to catch messages coming for specified port
-			socket = new DatagramSocket(port);
-			packet = new DatagramPacket(new byte[63], 63);
-			sender = false;
-			running = true;
-			this.match = match;
+			try{
+				socket = new DatagramSocket(port);
+				packet = new DatagramPacket(new byte[63], 63);
+				sender = false;
+				running = true;
+				this.description = description;
+				this.match = match;
+				//ADDR = InetAddress.getByName("255.255.255.255");
+			}
+			catch (Exception ex){
+				ex.printStackTrace();
+			}
+		}
+		
+		public static InetAddress GET_ADDR(){
+			try{
+			return InetAddress.getByName("255.255.255.255");
+			}
+			catch (Exception ex){
+				ex.printStackTrace();
+				return InetAddress.getLoopbackAddress();
+			}
 		}
 		
 		public void run(){
@@ -757,33 +830,53 @@ public final class ConnectionHandler implements Closeable{
 					catch(InterruptedException ex){
 						Thread.currentThread().interrupt();
 					}
-					socket.send(packet);
+					try{
+						socket.send(packet);
+					}
+					catch(IOException ex){
+						count = BROADCAST_COUNT;
+						ex.printStackTrace();
+					}
 				}
 			}
 			else{
 				while(running){
-					socket.recieve(packet);
-					if (!this.match.equals(new String(packet.getData(), Packet.HEADERSIZE+26, 26))){
-						//item sending this packet wasn't intending to talk to us, ignore
-						continue;
+					try{
+						socket.receive(packet);
+						if (!this.match.equals(new String(packet.getData(), Packet.HEADERSIZE+26, 26))){
+							//item sending this packet wasn't intending to talk to us, ignore
+							continue;
+						}
+						//intended to talk to us, send TCP connect request, send descriptive data, close connection
+						byte[] ipAddr = ByteTranslater.subArray(packet.getData(), Packet.IPSENDERSTART, 4);
+						Socket temp = new Socket(InetAddress.getByAddress(ipAddr), 2051);
+						Packet tempPacket = new Packet(9+ByteTranslater.toSmallBytes(this.description.toCharArray()).length); //4 + 4 + 1 + desc.size
+						tempPacket.add(ByteTranslater.toBytes(clientCount)); //number of clients connected in
+						tempPacket.add(ByteTranslater.toBytes(clients.length));
+						tempPacket.add((byte)ByteTranslater.toSmallBytes(this.description.toCharArray()).length);
+						tempPacket.add(ByteTranslater.toSmallBytes(this.description.toCharArray()));
+						temp.getOutputStream().write(tempPacket.send(InetAddress.getByAddress(ipAddr), 2051, 2051, (byte)0, true, true, false, true, false)); //Complete, Closing, No New Connection, Ping, Not Encrypted
+						temp.close();
 					}
-					//intended to talk to us, send TCP connect request, send descriptive data, close connection
-					byte[] ipAddr = ByteTranslater.subArray(packet.getData(), Packet.IPSENDERSTART, 4);
-					Socket temp = new Socket(InetAddress.getByAddress(ipAddr), 2051);
-					Packet tempPacket = new Packet(9+descriptions.toBytes().length); //4 + 4 + 1 + desc.size
-					tempPacket.add(ByteTranslater.toBytes(clientCount)); //number of clients connected in
-					tempPacket.add(ByteTranslater.toBytes(clients.length));
-					tempPacket.add((byte)description.toBytes().length);
-					tempPacket.add(description.toBytes());
-					temp.getOutputStream().write(tempPacket.send(InetAddress.getByAddress(ipAddr), 2051, 2051, (byte)0, true, true, false, true, false)); //Complete, Closing, No New Connection, Ping, Not Encrypted
-					temp.close();
+					catch (SocketException e){
+						close();
+						return;
+					}
+					catch (IOException e){
+						close();
+						return;
+					}
 				}
 			}
 		}
 		
+		public boolean isServerMode(){
+			return !this.sender;
+		}
+		
 		public void close(){
-			socket.close()
-			running = false
+			socket.close();
+			running = false;
 		}
 	}
 	protected class BroadcastClientReciever implements Runnable{
@@ -791,9 +884,15 @@ public final class ConnectionHandler implements Closeable{
 		private DLList<ServerInfo> serverData;
 		private boolean running;
 		public BroadcastClientReciever(DLList<ServerInfo> listOut){
-			this.serverData = listOut
-			this.server = new ServerSocket(2051);
-			this.running = true;
+			this.serverData = listOut;
+			try{
+				this.server = new ServerSocket(2051);
+				this.running = true;
+			}
+			catch(Exception ex){
+				ex.printStackTrace();
+			}
+			
 		}
 		public void run(){
 			while (running){
@@ -803,20 +902,39 @@ public final class ConnectionHandler implements Closeable{
 				catch (InterruptedException ex){
 					Thread.currentThread().interrupt();
 				}
-				Socket listen = server.accept();
-				Packet temp = Packet.read(listen.getInputStream());
-				ServerInfo data = new ServerInfo(temp.getData());
-				serverData.add(data)
+				try{
+					Socket listen = server.accept();
+					Packet temp = Packet.read(listen.getInputStream());
+					ServerInfo data = new ServerInfo(temp.sendComplete());
+					serverData.add(data);
+				}
+				catch (Exception ex){
+					ex.printStackTrace();
+					close();
+					return;
+				}
 			}
+		}
+		public void close(){
+			try{
+				server.close();
+			}
+			catch (Exception ex){
+				ex.printStackTrace();
+			}
+			running = false;
 		}
 	}
 	protected class ServerInfo{
 		private int clientCount, maxClientCount;
 		private String description;
+		private byte[] serverIP;
 		public ServerInfo(byte[] vals){
-			this.clientCount = ByteTranslater.toInt(vals, 0);
-			this.maxClientCount = ByteTranslater.toInt(vals, 4);
-			this.description = new String(vals, 9, vals[8]);
+			this.clientCount = ByteTranslater.toInt(vals, Packet.HEADERSIZE);
+			this.maxClientCount = ByteTranslater.toInt(vals, Packet.HEADERSIZE+4);
+			this.description = new String(vals, Packet.HEADERSIZE+9, vals[Packet.HEADERSIZE+8]);
+			this.serverIP = new byte[6];
+			System.arraycopy(vals, Packet.IPSENDERSTART, serverIP, 0, 6);
 			
 		}
 		public int getClientCount(){
@@ -827,6 +945,21 @@ public final class ConnectionHandler implements Closeable{
 		}
 		public String getDescription(){
 			return this.description;
+		}
+		public byte[] getIP(){
+			return ByteTranslater.subArray(serverIP, 0, 4);
+		}
+		public short getPort(){
+			return ByteTranslater.toShort(serverIP, 4);
+		}
+		public String toString(){
+			String ip = "";
+			for (int i=0;i<4;i++){
+				ip += this.serverIP[i];
+				if (i < 3) ip += ".";
+			}
+			ip += ":" + getPort();
+			return "IP: " + ip + ", Desc: " + this.description + ", Size: " + this.clientCount + "/" + this.maxClientCount;
 		}
 	}
 }

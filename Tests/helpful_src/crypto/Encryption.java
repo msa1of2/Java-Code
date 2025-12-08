@@ -49,20 +49,20 @@ public class Encryption{
 	 */
 	
 	//Get and Set methods are intended to be overridden by subclassess for ease of extensions
-	public   byte get(byte[] array, int index){
+	public byte get(byte[] array, int index){
 		return array[index];
 	}
-	public   void set(byte[] array, int index, byte value){
+	public void set(byte[] array, int index, byte value){
 		array[index] = value;
 	}
-	public   int sizeOfArray(int n){
+	public int sizeOfArray(int n){
 		System.out.println("Ecnryption size of array being run");
 		return n*n*n;
 	}
 	
 	//turns an x,y,depth coordinate on this face for an n by n by n cube into the index of that coordinate for use in rotation and shifting functions during encryption / decryption
 	//Note: There are multiple different ways to refer to the same index in the list, 6 of them, 1 for every face, due to how the cube works
-	protected   int getIndex(int face, int x, int y, int depth, int n){
+	protected int getIndex(int face, int x, int y, int depth, int n){
 		if (depth < 0 || depth >= n) throw new IllegalArgumentException("Depth value of " + depth + " must be between 0 and " + (n-1) + " inclusive");
 		if (x < 0 || x >= n) throw new IllegalArgumentException("X value of " + x + " must be between 0 and " + (n-1) + " inclusive");
 		if (y < 0 || y >= n) throw new IllegalArgumentException("Y value of " + y + " must be between 0 and " + (n-1) + " inclusive");
@@ -86,7 +86,7 @@ public class Encryption{
 	
 	//Rotates the face of the n by n by n cube towards clockwise facing the face down depth layers, i.e. depth =2 -> rotates top 2 layers clock wise, each layer stays distinct but still rotates just the same
 	//Returns the array passed in after the rotation step is complete
-	protected   byte[] rotate(byte[] array, int face, int x, int y, int depth, int n){
+	protected byte[] rotate(byte[] array, int face, int x, int y, int depth, int n){
 		if (array == null ? true : array.length == 0) throw new IllegalArgumentException("Array cannot be null and must contain at least 1 element");
 		if (face < 0 || face >= 6) throw new IllegalArgumentException("Face must be within the bounds of 0 and 5 inclusive, got " + face);
 		if (x < 0 || x >= n) throw new IllegalArgumentException("X value must be within the bounds of 0 and " + (n-1) + " inclusive, got " + x);
@@ -119,7 +119,7 @@ public class Encryption{
 		return array; // array will be changed and this return is not required to access the newly changed cube
 	}
 	//Exact duplicate of rotate function but rotation in the counter clockwise direction
-	protected   byte[] rotateCCW(byte[] array, int face, int x, int y, int depth, int n){
+	protected byte[] rotateCCW(byte[] array, int face, int x, int y, int depth, int n){
 		if (array == null ? true : array.length == 0) throw new IllegalArgumentException("Array cannot be null and must contain at least 1 element");
 		if (face < 0 || face >= 6) throw new IllegalArgumentException("Face must be within the bounds of 0 and 5 inclusive, got " + face);
 		if (x < 0 || x >= n) throw new IllegalArgumentException("X value must be within the bounds of 0 and " + (n-1) + " inclusive, got " + x);
@@ -152,7 +152,7 @@ public class Encryption{
 		return array; // array will be changed and this return is not required to access the newly changed cube
 	}
 	//Rotates the entire depth level clockwise, and only rotates the desired level
-	protected   byte[] rotateLevel(byte[] array, int face, int depth, int n){
+	protected byte[] rotateLevel(byte[] array, int face, int depth, int n){
 		if (array == null ? true : array.length == 0) throw new IllegalArgumentException("Array cannot be null and must contain at least 1 element");
 		if (face < 0 || face >= 6) throw new IllegalArgumentException("Face must be within the bounds of 0 and 5 inclusive, got " + face);
 		if (depth < 0 || depth >= n) throw new IllegalArgumentException("Depth value must be within the bounds of 0 and " + (n-1) + " inclusive, got " + depth);
@@ -169,7 +169,7 @@ public class Encryption{
 		return array;
 	}
 	//Rotates the entire depth level counter clockwise, and only rotates the desired level
-	protected   byte[] rotateCCWLevel(byte[] array, int face, int depth, int n){
+	protected byte[] rotateCCWLevel(byte[] array, int face, int depth, int n){
 		if (array == null ? true : array.length == 0) throw new IllegalArgumentException("Array cannot be null and must contain at least 1 element");
 		if (face < 0 || face >= 6) throw new IllegalArgumentException("Face must be within the bounds of 0 and 5 inclusive, got " + face);
 		if (depth < 0 || depth >= n) throw new IllegalArgumentException("Depth value must be within the bounds of 0 and " + (n-1) + " inclusive, got " + depth);
@@ -187,17 +187,17 @@ public class Encryption{
 	}
 	//Rotation helper functions
 	//turns the absolute x/y index into relative values for the face - used exclusively for rotations on a face -> See Function: rotate
-	protected   int absToRel(int value, int n){
+	protected int absToRel(int value, int n){
 		return value < (n>>1) ? value-(n>>1) : value-(n>>1)+1;
 	}
 	//turns the relative value/y index into absolute value for the face - used exclusively for rotation on a face -> See Function: rotate
-	protected   int relToAbs(int value, int n){
+	protected int relToAbs(int value, int n){
 		return value <= 0 ? value+(n>>1) : value+(n>>1)-1;
 	}
 	
 	//Shifts the values of the n by n by n cube into the face depth layers deep, i.e. depth = 2 -> shifts the index on top of the face 2 layers down so it will now have a depth of 3 instead of 1
 	//Returns the array passed in after the shifting step is complete
-	protected   byte[] shift(byte[] array, int face, int x, int y, int depth, int n){
+	protected byte[] shift(byte[] array, int face, int x, int y, int depth, int n){
 		if (array == null ? true : array.length == 0) throw new IllegalArgumentException("Array cannot be null and must contain at least 1 element");
 		if (face < 0 || face >= 6) throw new IllegalArgumentException("Face must be within the bounds of 0 and 5 inclusive, got " + face);
 		if (x < 0 || x >= n) throw new IllegalArgumentException("X value must be within the bounds of 0 and " + (n-1) + " inclusive, got " + x);
@@ -232,7 +232,7 @@ public class Encryption{
 	}
 	//Wraps a number num between top-1 and bottom inclusive i.e. wrap(2, 0, 5) -> 2 while wrap(7, 0, 5) -> 2 and wrap(-3, 0, 5) -> 2
 	//Returns the wrapped number num
-	public   int wrap(int num, int bottom, int top){ 
+	public int wrap(int num, int bottom, int top){ 
 		if (top == bottom) return num; //stack overflow protection and div by 0 protection
 		if (top < bottom) throw new IllegalArgumentException("Top value of " + top + " cannot be smaller than bottom value of " + bottom);
 		//includes bottom, excludes top
@@ -250,7 +250,7 @@ public class Encryption{
 	
 	//performs the XOR operation on all elements between data and carry. if data is larger than carry, carry will XOR again to cover the entirety of data
 	//The two arrays don't need to be same length, both need to have at least 1 element and not null
-	protected   byte[] listXOR(byte[] data, byte[] carry){
+	protected byte[] listXOR(byte[] data, byte[] carry){
 		if (data == null ? true : data.length == 0) throw new IllegalArgumentException("Data array must not be null and must have at least 1 value stored within it");
 		if (carry== null ? true : carry.length== 0) throw new IllegalArgumentException("Carry array must now be null and must have at least 1 value stored within it");
 		//System.out.print("XOR FN: " + data.length + ", " + carry.length + " -- ");
@@ -279,7 +279,7 @@ public class Encryption{
 	}
 	
 	//Encrypts the data to be unrelated to the original passed in at first glance, Returns newly scrambled list based on data pased in, size of the new list will be a multiple of the perfect cube of size n passed in
-	public   byte[] encrypt(byte[] data, byte[] key, int n){
+	public byte[] encrypt(byte[] data, byte[] key, int n){
 		//ensure information is of decent quality
 		if (n < 1 || n > 32) throw new IllegalArgumentException("Size of the cubes must be between 1 and 32 exclusive, got " + n); //arbitrary upper bounds to keep values reasonable, actual upper bounds is 512 / 2**9 b/c this will give the signed integer limit when cubed which is how java stores arrays, with ints
 		//if ((n&0b1) == 1 && false) throw new IllegalArgumentException("Size of the cubes must be even, got " + n);
@@ -349,7 +349,7 @@ public class Encryption{
 		return send;
 	}
 	//Decrypts the data to be as it was before the encryption process
-	public   byte[] decrypt(byte[] data, byte[] key, int n){
+	public byte[] decrypt(byte[] data, byte[] key, int n){
 		//ensure information is of decent quality
 		if (n < 1 || n > 32) throw new IllegalArgumentException("Size of the cubes must be between 1 and 32 exclusive, got " + n); //arbitrary upper bounds to keep values reasonable, actual upper bounds is 512 / 2**9 b/c this will give the signed integer limit when cubed which is how java stores arrays, with ints
 		//if ((n&0b1) == 1 && false) throw new IllegalArgumentException("Size of the cubes must be even, got " + n);
@@ -421,7 +421,7 @@ public class Encryption{
 		return send;
 	}
 	//Parses the instructions of the key based on the key packing docket above, takes the instrction list to return, the key array, and how big the instructions are in that order
-	protected   int[] parseInstructions(int[] instructions, byte[] key, int size){
+	protected int[] parseInstructions(int[] instructions, byte[] key, int size){
 		if (size <= 0 || size > 32) throw new IllegalArgumentException("Instruction size must be between 0 and 33 exclusive, got " + size);
 		if (instructions == null ? true : (key.length*8/size + (key.length*8%size == 0 ? 0:1)) > instructions.length) throw new IllegalArgumentException("Instruction return list must not be null, and must be able to store the entire key's instructions"); //instruction list can be length = 0 when the key list is too small to do an instruction - not advised
 		if (key == null ? true : key.length == 0) throw new IllegalArgumentException("Key list must not be null and of a size greater than 0");
@@ -467,8 +467,17 @@ public class Encryption{
 		return instructions;
 	}
 	
+	public static byte[] encrypt(byte[] data, byte[] key, int n){
+		Encryption en = new Encryption();
+		return en.encrypt(data, key, n);
+	}
+	public static byte[] decrypt(byte[] data, byte[] key, int n){
+		Encryption en = new Encryption();
+		return en.decrypt(data, key, n);
+	}
+	
 	//Unit Testing:
-	public   boolean unitTest(String name, boolean printResponses){
+	public boolean unitTest(String name, boolean printResponses){
 		boolean all = name.toLowerCase().equals("all"), returnValue = true;
 		if (name.toLowerCase().equals("decryption") || all){ //testing the decryption part of the program by assuming encryption works correctly - can use random values for data / key
 			if (printResponses)System.out.println("Decryption Unit Test:");
@@ -749,27 +758,27 @@ public class Encryption{
 		return all ? returnValue : false; //return results collected or nothing if input was wrong
 	}
 	//Function used to ensure rotation and shifting happen correctly by comparing the two arrays passed in -> See Function: unitTest
-	public   boolean equals(byte[] array1, byte[] array2){
+	public boolean equals(byte[] array1, byte[] array2){
 		if (array1.length != array2.length) return false; //different sizes means they can't be completely equal
 		for (int i=0;i<array1.length;i++){
 			if (array1[i] != array2[i]) return false; //difference detected, no way they are all equal now
 		}
 		return true; //no differences detected
 	}
-	public   boolean equals(int[] array1, int[] array2){ //same exact equals method as byte array above, just for ints
+	public boolean equals(int[] array1, int[] array2){ //same exact equals method as byte array above, just for ints
 		if (array1.length != array2.length) return false;
 		for (int i=0;i<array1.length;i++){
 			if (array1[i] != array2[i]) return false;
 		}
 		return true;
 	}
-	public   void print(byte[] array){
+	public void print(byte[] array){
 		for (byte num : array){
 			System.out.print(num + ", ");
 		}
 		System.out.println();
 	}
-	public   void print(int[] array){
+	public void print(int[] array){
 		for (int num : array){
 			System.out.print(num + ", ");
 		}
@@ -777,7 +786,7 @@ public class Encryption{
 	}
 	
 	//Sets the bit at flagIndex of flagStorage to 0 / 1 depending on if setValue is false / true respectfully
-	public   long flagSet(long flagStorage, boolean setValue, int flagIndex){
+	public long flagSet(long flagStorage, boolean setValue, int flagIndex){
 		if (flagIndex < 0 || flagIndex >= 64) throw new IllegalArgumentException("Flag Index must be between 0 and 63 inclusive, got " + flagIndex);
 		if (setValue){
 			return flagStorage | (1<<flagIndex); //ensures the flag is set to a 1 or true in this 64 bit storage medium
@@ -785,7 +794,7 @@ public class Encryption{
 		return flagStorage & ~(1<<flagIndex); //ensures the flag is set to a 0 or false in this 64 bit storage medium
 	}
 	//Returns the boolen value of flagStorage at flagIndex depending on if the bit is 0 / 1
-	public   boolean flagGet(long flagStorage, int flagIndex){
+	public boolean flagGet(long flagStorage, int flagIndex){
 		if (flagIndex < 0 || flagIndex >= 64) throw new IllegalArgumentException("Flag Index must be between 0 and 63 inclusive, got " + flagIndex);
 		return ((flagStorage >> flagIndex) & 0b1) == 1;
 	}

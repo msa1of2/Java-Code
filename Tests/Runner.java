@@ -88,13 +88,13 @@ public class Runner {
 		
 		
 		
-		DLList<Integer> list = new DLList<Integer>();
+		/*DLList<Integer> list = new DLList<Integer>();
 		
 		list.add(new Integer[] {0,1,2,3,4,5,6,7});
 		
 		for (int i=0;i<list.size()*2;i++){
 			System.out.println("[" + i + "]:" + list.get(i));
-		}
+		}*/
 		
 		
 		
@@ -162,19 +162,19 @@ public class Runner {
 		if (!res) {System.out.println("FAIL");return;}
 		}
 		System.out.println("Win");*/
-		/*//Encryption.unitTest("all", true);
+		//Encryption.unitTest("all", true);
 		long start = System.currentTimeMillis();
 		//System.out.println("Lets go in the garden, you'll find something waiting, right ther".length());
 		byte[] key = "Lets go in the garden, you'll find something waiting, right there where you left it lying up-side down".getBytes();
 		//String test = "How do we know if we're alive? Is there a higher power out there? what is consiousness? Are we alone in the universe? Will there be a tomorrow? Are we going to be okay? ";
-		String test = "ABCDEFGHIJKLMNOPQRSTUZWXYZ";
-		Bitcryption bit = new Bitcryption();
-		byte[] out = bit.encrypt(test.getBytes(), key, 2);
+		String test = "ABCDEFGHIJKLMNOPQRSTUZWXYZABCDEFGHIJKLMNOPQRSTUZWXYZ";
+		Encryption bit = new Bitcryption();
+		byte[] out = bit.encrypt(test.getBytes(), key, 16);
 		System.out.println("Middle: '" + (new String(out)) + "' - '" + printable(out) + "' - '" + printable(test.getBytes()) + "'");
 		out = bit.decrypt(out, key, 2);
 		
 		System.out.println("Return: '" + (new String(out)) + "'");
-		System.out.println((System.currentTimeMillis() - start));*/
+		System.out.println("Time: " + (System.currentTimeMillis() - start) + "ms");
 		//System.out.println(makeWord(new byte[] {6, 1, 0, 1}, 4));
 		
 		//data strucutre stuff
