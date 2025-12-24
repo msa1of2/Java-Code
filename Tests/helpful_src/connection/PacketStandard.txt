@@ -44,7 +44,7 @@ Client - sends broadcast 3 times @ 4/s (2050)
 Server - receives broadcast, sends connection @ 2051 - transmit data about server - close connection - both know each other's ip
 Inital ping broadcast: [standardHeader (to=0) ([20]=10010=true,false,false,true,false)] data:
 [0-25] name - 26 low precision chars
-[26-51] looking for server name - server has descriptive name of what it offers
+[26-51] looking for server name - server has descriptive name of what it offers - 26 low precision chars
 
 Server hears broadcast, sends connection to 2051 of client
 [standardHeader (to=client) ([20]=10010)] data:

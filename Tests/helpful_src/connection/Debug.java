@@ -19,7 +19,10 @@ public class Debug{
 							  +"\n2 - Create Client Ex. 2 <Name>"
 							  +"\n3 - Send Message Ex. 3 <Name> <Message>"
 							  +"\n4 - Find shortest path to destination Ex. 4 <Name>"
-							  +"\n5 - List all the names of the connected clients");
+							  +"\n5 - List all the names of the connected clients"
+							  +"\n6 - Create Client with Broadcasting Ex. 6 <Name>"
+							  +"\n7 - Create Server with Broadcasting Ex. 7 <Name>"
+							  +"\n8 - List all the servers that responded to our calls");
 			input = scan.nextLine();
 			
 			
@@ -55,6 +58,30 @@ public class Debug{
 					nameString += name + "\n";
 				}
 				System.out.println("All the names:\n" + nameString + "\b");
+			}
+			if (input.charAt(0) == '6' && cH != null){
+				cH = new ConnectionHandler(null, false, 4, input.substring(2);
+				cH.setBroadcastClient("Debug Broadcasting");
+				
+				temp = new Thread(new Run(cH), "Broadcast Client Thread");
+				temp.start();
+				System.out.println("New broadcast client made");
+			}
+			if (input.charAt(0) == '7' && cH != null){
+				cH = new ConnectionHandler(addr, true, 4, input.substring(2));
+				cH.setBroadcastServer("Debug Broadcasting", "Testing server side of the broadcast and description length (>26)");
+				
+				temp = new Thread(new Run(cH), "Broadcast Server Thread");
+				temp.start();
+				System.out.println("New broadcast server made");
+			}
+			if (input.charAt(0) == 8 && cH != null){
+				if (!cH.isBroadcaster() || cH.isServer()) continue;
+				DLList<ServerInfo> out = cH.getServers();
+				System.out.println(out.size() + " Servers in list:")
+				for (ServerInfo info : out){
+					System.out.println(info);
+				}
 			}
 			if (input.equals("check") && cH != null){
 				System.out.println("\n\n" + cH.getConnections());

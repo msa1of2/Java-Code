@@ -22,9 +22,11 @@ public final class ConnectionHandler implements Closeable{
 	private int maxClientCount, clientCount; //number of clients that need to be connected for a full connection
 	private Graph<Client> conns;
 	private MessageListener ML; //event listener to be notified on every message we're sent
+	
 	private Broadcaster broadcaster;
 	private BroadcastClientReciever broadcasterReciever;
 	private DLList<ServerInfo> infos;
+	private BroadcastConnectionListener BCL; //event listener to be notified on every server that responds to our broadcasts if we make them
 	
 	/* TODO:
 	 * comment the hell out of this
@@ -33,6 +35,7 @@ public final class ConnectionHandler implements Closeable{
 	public ConnectionHandler(String ipAddr, boolean isServer, int maxClientCount, String name){
 		//isServer = false;
 		try{
+			if (ipAddr == null) ipAddr = "Null";
 			if (ipAddr.equals("127.0.0.1") || ipAddr.equals("localhost")){
 				ipAddr = InetAddress.getLocalHost().getHostAddress();
 			}
@@ -43,8 +46,8 @@ public final class ConnectionHandler implements Closeable{
 			this.threads = new DLList<Thread>();
 			this.clientCount = 1; //clients[0] aka us counts as a client
 			
-			if (name.length() > 28){ //cut the name down to proper size
-				name = name.substring(0, 28);
+			if (name.length() > 26){ //cut the name down to proper size
+				name = name.substring(0, 26);
 			}
 			
 			this.conns = new Graph<Client>();
@@ -76,7 +79,10 @@ public final class ConnectionHandler implements Closeable{
 				notifyNetwork = true; //default value, when a new client joins this server, all local clients will be told, but servers connected to this one will only be told if this value is true
 			}
 			else{
-				Socket temp = new Socket(ipAddr, 2049);
+				if (!ipAddr.equals("Null")){
+					connect(ipAddr);
+				}
+				/*Socket temp = new Socket(ipAddr, 2049);
 				buffer = new DLList<byte[]>();
 				runner = new Receiver(temp);
 				listener = new Thread(runner);
@@ -94,7 +100,7 @@ public final class ConnectionHandler implements Closeable{
 				conns.add(clients[0]);
 				
 				notifyNetwork = false; //don't cause an infinite feedback loop for clients telling the server that it joined
-				
+				*/
 				//tell the server we connected to about ourselves
 				//temp.getOutputStream().write(onConnection().send(temp.getInetAddress(), (byte)0, (byte)0, true, false, true, false, false)); //isComplete, isClosing, isNew, isPing, isEncrypted
 			}
@@ -123,6 +129,7 @@ public final class ConnectionHandler implements Closeable{
 	}
 	//Sets up broadcast connection mode including corresponding threads
 	public void setBroadcastClient(String projectName){
+		if (projectName.length() > 26) projectName = projectName.substring(0, 26);
 		this.broadcastConnect = true;
 		this.infos = new DLList<ServerInfo>();
 		this.broadcaster = new Broadcaster(2050, ByteTranslater.toSmallBytes(projectName.toCharArray()));
@@ -143,20 +150,66 @@ public final class ConnectionHandler implements Closeable{
 	}
 	
 	//Broadcast functions
-	public void broadcastClient(){
+	//Broadcast from the client about the server you want to connect with
+	public void broadcastClient(){ 
+		this.infos.clear(); //clear the previous server connection stuffs
 		this.broadcast = new Thread(this.broadcaster);
 		
 		this.broadcast.start();
 	}
-	public DLList<ServerInfo> getServers(){
+	//Returns a linked list representation of all the servers that responded to our broadcast
+	public DLList<ServerInfo> getServers(){ 
 		return infos;
 	}
-	public String getServersString(){
+	//Returns a String representation of all the servers that responded to our broadcast
+	public String getServersString(){ 
 		String send = "";
 		for (ServerInfo item : infos){
 			send += item.toString() + "\n";
 		}
 		return send;
+	}
+	//Connects with the specified server we found, only needs an IP address to work
+	public void connect(ServerInfo server){
+		try{
+			connect(server.getStringIP());
+		}
+		catch (Exception ex){
+			ex.printStackTrace();
+		}
+	}
+	//connects to the specified string representation of the ip
+	public void connect(String ip) throws IOException{ 
+		Socket temp = new Socket(ipAddr, 2049);
+		buffer = new DLList<byte[]>();
+		runner = new Receiver(temp);
+		listener = new Thread(runner);
+		client = new Client(temp, "Temp username", runner, listener, true);
+		clients = new Client[2];
+		
+		byte[] ip = new byte[6];
+		System.arraycopy(InetAddress.getLocalHost().getAddress(), 0, ip, 0, 4);
+		System.arraycopy(ByteTranslater.toBytes((short)temp.getLocalPort()), 0, ip, 4, 2);
+		clients[0] = new Client(ip, name); //clients 0 is us
+		clients[1] = client; //this is the server we connected to
+		clients[1].isServer = true;
+		
+		//connect it into the graph of our known network
+		conns.add(clients[0]);
+		
+		notifyNetwork = false; //don't cause an in
+	}
+	//returns true if there are servers in our server info buffer
+	public boolean hasServers(){
+		return infos.size() > 0;
+	}
+	//Sets the listener to the one provided, on new server connections, listener will be notified
+	public void setBroadcastConnectionListener(BroadcastConnectionListener bcl){
+		this.BCL = bcl;
+	}
+	//Returns true if this is a broadcasting connection handler
+	public boolean isBroadcaster(){
+		return broadcastConnect;
 	}
 	
 	//Receiving information functions / methods
@@ -906,6 +959,7 @@ public final class ConnectionHandler implements Closeable{
 					Socket listen = server.accept();
 					Packet temp = Packet.read(listen.getInputStream());
 					ServerInfo data = new ServerInfo(temp.sendComplete());
+					if (this.BCL != null) this.BCL.onBroadcastConnection(data);
 					serverData.add(data);
 				}
 				catch (Exception ex){
@@ -948,6 +1002,18 @@ public final class ConnectionHandler implements Closeable{
 		}
 		public byte[] getIP(){
 			return ByteTranslater.subArray(serverIP, 0, 4);
+		}
+		public String getStringIP(){
+			String send = "";
+			int count = 0
+			for (byte item : getIP()){
+				send += item;
+				if (count < 3){
+					send += ".";
+				}
+				count++;
+			}
+			return send;
 		}
 		public short getPort(){
 			return ByteTranslater.toShort(serverIP, 4);
