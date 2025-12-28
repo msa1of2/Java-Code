@@ -324,6 +324,19 @@ public class ByteTranslater{
 		return send;
 	}
 	
+	public static byte[] fill(byte[] array, int size, byte value){
+		if (size < array.length) throw new IllegalArgumentException("Filling arrays requires the size to be greater than the array passed in's size");
+		byte[] send = new byte[size];
+		System.arraycopy(array, 0, send, 0, array.length);
+		if (size == array.length) return send;
+		if (value != 0){
+			for (int i=array.length;i<size;i++){
+				send[i] = value;
+			}
+		}
+		return send;
+		
+	}
 	//Returns a byte array starting from startIndex and containing all the bytes up to and excluding endIndex
 	public static byte[] subArray(byte[] array, int startIndex, int endIndex){
 		if (array == null) throw new NullPointerException("Array cannot be null");

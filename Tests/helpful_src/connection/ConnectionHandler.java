@@ -68,6 +68,8 @@ public final class ConnectionHandler implements Closeable{
 				connecter = new Connecter();
 				listener = new Thread(connecter);
 				
+				this.localName = name;
+				
 				clients = new Client[maxClientCount+1];
 				this.maxClientCount = maxClientCount;
 				isConnected = false;
@@ -146,7 +148,7 @@ public final class ConnectionHandler implements Closeable{
 	//Sets up broadcast server side connection and corresponding threads
 	public void setBroadcastServer(String projectName, String serverDescription){
 		this.broadcastConnect = true;
-		this.broadcaster = new Broadcaster(2050, projectName, serverDescription);
+		this.broadcaster = new Broadcaster(2050, projectName, this.localName, serverDescription);
 		
 		this.broadcast = new Thread(this.broadcaster);
 		
@@ -188,7 +190,16 @@ public final class ConnectionHandler implements Closeable{
 		buffer = new DLList<byte[]>();
 		runner = new Receiver(temp);
 		listener = new Thread(runner);
-		client = new Client(temp, "Temp username", runner, listener, true);
+		String name = "Temp-username";
+		if (infos != null){
+			for (ServerInfo info : infos){
+				if (info.equals(temp.getInetAddress().getAddress())){
+					name = info.getName();
+					break;
+				}
+			}
+		}
+		client = new Client(temp, name, runner, listener, true);
 		clients = new Client[2];
 		
 		byte[] ip = new byte[6];
@@ -841,7 +852,7 @@ public final class ConnectionHandler implements Closeable{
 		private static final int WAIT_TIME = 250, BROADCAST_COUNT = 12;
 		private DatagramPacket packet;
 		private boolean sender, running;
-		private String match, description;
+		private String match, name, description;
 		
 		public Broadcaster(int port, String localName, byte[] match){ //constructs a caster to broadcast message to every computer on the network to the specified port
 			try{
@@ -866,12 +877,13 @@ public final class ConnectionHandler implements Closeable{
 				ex.printStackTrace();
 			}
 		}
-		public Broadcaster(int port, String match, String description){ //constructs a caster to catch messages coming for specified port
+		public Broadcaster(int port, String match, String name, String description){ //constructs a caster to catch messages coming for specified port
 			try{
 				socket = new DatagramSocket(port);
 				packet = new DatagramPacket(new byte[52+Packet.HEADERSIZE], 52+Packet.HEADERSIZE);
 				sender = false;
 				running = true;
+				this.name = name;
 				this.description = description;
 				this.match = match;
 				//ADDR = InetAddress.getByName("255.255.255.255");
@@ -924,6 +936,7 @@ public final class ConnectionHandler implements Closeable{
 						Packet tempPacket = new Packet(9+ByteTranslater.toSmallBytes(this.description.toCharArray()).length); //4 + 4 + 1 + desc.size
 						tempPacket.add(ByteTranslater.toBytes(clientCount)); //number of clients connected in
 						tempPacket.add(ByteTranslater.toBytes(clients.length));
+						tempPacket.add(ByteTranslater.fill(ByteTranslater.toSmallBytes(this.name.toCharArray()), 26, (byte)0));
 						tempPacket.add((byte)ByteTranslater.toSmallBytes(this.description.toCharArray()).length);
 						tempPacket.add(ByteTranslater.toSmallBytes(this.description.toCharArray()));
 						temp.getOutputStream().write(tempPacket.send(InetAddress.getByAddress(ipAddr), 2051, 2051, (byte)0, true, true, false, true, false)); //Complete, Closing, No New Connection, Ping, Not Encrypted
@@ -1007,12 +1020,13 @@ public final class ConnectionHandler implements Closeable{
 	}
 	protected class ServerInfo{
 		private int clientCount, maxClientCount;
-		private String description;
+		private String description, name;
 		private byte[] serverIP;
 		public ServerInfo(byte[] vals){
 			this.clientCount = ByteTranslater.toInt(vals, Packet.HEADERSIZE);
 			this.maxClientCount = ByteTranslater.toInt(vals, Packet.HEADERSIZE+4);
-			this.description = new String(vals, Packet.HEADERSIZE+9, vals[Packet.HEADERSIZE+8]);
+			this.name = new String(vals, Packet.HEADERSIZE+8, 26);
+			this.description = new String(vals, Packet.HEADERSIZE+35, vals[Packet.HEADERSIZE+34]);
 			this.serverIP = new byte[6];
 			System.arraycopy(vals, Packet.IPSENDERSTART, serverIP, 0, 6);
 			
@@ -1044,6 +1058,9 @@ public final class ConnectionHandler implements Closeable{
 		public short getPort(){
 			return ByteTranslater.toShort(serverIP, 4);
 		}
+		public String getName(){
+			return this.name;
+		}
 		public String toString(){
 			String ip = "";
 			for (int i=0;i<4;i++){
@@ -1051,7 +1068,7 @@ public final class ConnectionHandler implements Closeable{
 				if (i < 3) ip += ".";
 			}
 			ip += ":" + getPort();
-			return "IP: " + ip + ", Desc: " + this.description + ", Size: " + this.clientCount + "/" + this.maxClientCount;
+			return "Name: " + name + ", IP: " + ip + ", Desc: " + this.description + ", Size: " + this.clientCount + "/" + this.maxClientCount;
 		}
 		public boolean equals(Object other){
 			if (other instanceof ServerInfo){
@@ -1059,6 +1076,14 @@ public final class ConnectionHandler implements Closeable{
 				byte[] otherNum = o.getIP();
 				for (int i=0;i<4;i++){
 					if (otherNum[i] != serverIP[i]) return false; //mismatch
+				}
+				return true;
+			}
+			if (other instanceof byte[]){
+				byte[] o = (byte[])other;
+				if (o.length < 4) return false;
+				for (int i=0;i<4;i++){
+					if (o[i] != serverIP[i]) return false;
 				}
 				return true;
 			}
