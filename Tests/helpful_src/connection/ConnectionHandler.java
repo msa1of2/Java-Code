@@ -112,7 +112,8 @@ public final class ConnectionHandler implements Closeable{
 			
 		
 			//server = null;
-			listener.start();
+			if (listener != null)
+				listener.start();
 			
 		}
 		catch (Exception e){
@@ -132,14 +133,14 @@ public final class ConnectionHandler implements Closeable{
 	}
 	//Sets up broadcast connection mode including corresponding threads
 	public void setBroadcastClient(String projectName){
-		if (projectName.length() > 26) projectName = projectName.substring(0, 26);
-		this.broadcastConnect = true;
-		this.infos = new DLList<ServerInfo>();
-		this.broadcaster = new Broadcaster(2050, ByteTranslater.toSmallBytes(projectName.toCharArray()));
-		this.broadcasterReciever = new BroadcastClientReciever(infos, this.BCL);
+		if (projectName.length() > 26) projectName = projectName.substring(0, 26); //snipped to size
+		this.broadcastConnect = true; //we're broadcasting
+		this.infos = new DLList<ServerInfo>(); //where to store responses
+		this.broadcaster = new Broadcaster(2050, this.localName, ByteTranslater.toSmallBytes(projectName.toCharArray())); //create the thing broadcasting
+		this.broadcasterReciever = new BroadcastClientReciever(infos, this.BCL); //create the mechanism to hear server responses
 		
 		this.broadcastReciever = new Thread(this.broadcasterReciever);
-		this.broadcastReciever.start();
+		this.broadcastReciever.start(); //start up server listener
 		broadcastClient(); //sends the client side of things
 	}
 	//Sets up broadcast server side connection and corresponding threads
@@ -382,7 +383,7 @@ public final class ConnectionHandler implements Closeable{
 	}
 	//Returns true if the connection handler's socket has closed
 	public boolean isClosed(){
-		if (this.client == null) return False; //Before starting cH, havent closed it yet
+		if (this.client == null) return false; //Before starting cH, havent closed it yet
 		if (!isServer) return client.client.isClosed();
 		else return server.isClosed();
 	}
@@ -842,11 +843,22 @@ public final class ConnectionHandler implements Closeable{
 		private boolean sender, running;
 		private String match, description;
 		
-		public Broadcaster(int port, byte[] match){ //constructs a caster to broadcast message to every computer on the network to the specified port
+		public Broadcaster(int port, String localName, byte[] match){ //constructs a caster to broadcast message to every computer on the network to the specified port
 			try{
+				Packet tempPack = new Packet(52);//used to add the header info to the Datagram packet
+				byte[] send = new byte[52];
+				System.arraycopy(ByteTranslater.toSmallBytes(localName.toCharArray()), 0, send, 0, 26); //add the name 
+				System.arraycopy(match, 0, send, 26, 26);
+				tempPack.add(send); //setting the headers out here because of jank
+				setSizeHeader(52); //guarenteed size of 52
+				setSenderHeader(2051);
+				setTimeHeader();
+				setBoolHeader(true, false, false, true, false); //iscomplete, not closing, no new connection, is ping, not encrypted
+				setServerProt();
+				
 				socket = new DatagramSocket();
 				socket.setBroadcast(true);
-				packet = new DatagramPacket(match, match.length, ADDR, port);
+				packet = new DatagramPacket(tempPack.sendComplete(), tempPack.sendComplete().length, ADDR, port);
 				sender = true;
 				//ADDR = InetAddress.getByName("255.255.255.255");
 			}
@@ -902,7 +914,7 @@ public final class ConnectionHandler implements Closeable{
 					try{
 						socket.receive(packet);
 						System.out.println(packet);
-						if (!this.match.equals(new String(packet.getData(), 26, 26))){ //Packet.HEADERSIZE+
+						if (!this.match.equals(new String(packet.getData(), 0, 26))){ //Packet.HEADERSIZE+
 							//item sending this packet wasn't intending to talk to us, ignore
 							continue;
 						}
