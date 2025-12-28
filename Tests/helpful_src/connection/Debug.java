@@ -60,7 +60,7 @@ public class Debug{
 				}
 				System.out.println("All the names:\n" + nameString + "\b");
 			}
-			if (input.charAt(0) == '6' && cH != null){
+			if (input.charAt(0) == '6'){
 				cH = new ConnectionHandler(null, false, 4, input.substring(2));
 				cH.setBroadcastClient("Debug Broadcasting");
 				
@@ -68,7 +68,7 @@ public class Debug{
 				temp.start();
 				System.out.println("New broadcast client made");
 			}
-			if (input.charAt(0) == '7' && cH != null){
+			if (input.charAt(0) == '7'){
 				cH = new ConnectionHandler(addr, true, 4, input.substring(2));
 				cH.setBroadcastServer("Debug Broadcasting", "Testing server side of the broadcast and description length (>26)");
 				

@@ -107,7 +107,8 @@ public final class ConnectionHandler implements Closeable{
 				//temp.getOutputStream().write(onConnection().send(temp.getInetAddress(), (byte)0, (byte)0, true, false, true, false, false)); //isComplete, isClosing, isNew, isPing, isEncrypted
 			}
 			//clients[0] = new Client(InetAddress.getLocalHost().getAddress(), name);
-			clients[0].isServer = isServer;
+			if (clients != null)
+				clients[0].isServer = isServer;
 			
 		
 			//server = null;
@@ -229,6 +230,7 @@ public final class ConnectionHandler implements Closeable{
 	}
 	//Returns true if there are bytes in the buffer
 	public boolean hasBuffer(){
+		if (this.buffer == null) return false; //no buffer to have
 		return buffer.size()>0;
 	}
 	//Exact same function as hasBuffer()
@@ -380,6 +382,7 @@ public final class ConnectionHandler implements Closeable{
 	}
 	//Returns true if the connection handler's socket has closed
 	public boolean isClosed(){
+		if (this.client == null) return False; //Before starting cH, havent closed it yet
 		if (!isServer) return client.client.isClosed();
 		else return server.isClosed();
 	}
