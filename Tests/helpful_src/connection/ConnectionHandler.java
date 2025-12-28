@@ -925,8 +925,8 @@ public final class ConnectionHandler implements Closeable{
 				while(running){
 					try{
 						socket.receive(packet);
-						System.out.println(packet);
-						if (!this.match.trim().equals(new String(packet.getData(), 0, 26).trim())){ //Packet.HEADERSIZE+
+						print(packet.getData());
+						if (!this.match.trim().equals(new String(packet.getData(), Packet.HEADERSIZE+26, 26).trim())){ //Packet.HEADERSIZE+
 							//item sending this packet wasn't intending to talk to us, ignore
 							continue;
 						}
