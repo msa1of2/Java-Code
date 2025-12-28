@@ -23,7 +23,8 @@ public class Debug{
 							  +"\n5 - List all the names of the connected clients"
 							  +"\n6 - Create Client with Broadcasting Ex. 6 <Name>"
 							  +"\n7 - Create Server with Broadcasting Ex. 7 <Name>"
-							  +"\n8 - List all the servers that responded to our calls");
+							  +"\n8 - List all the servers that responded to our calls"
+							  +"\n9 - Connect to the specified ip address Ex. 9 ##.##.##.##");
 			input = scan.nextLine();
 			
 			
@@ -76,13 +77,30 @@ public class Debug{
 				temp.start();
 				System.out.println("New broadcast server made");
 			}
-			if (input.charAt(0) == 8 && cH != null){
+			if (input.charAt(0) == '8' && cH != null){
 				if (!cH.isBroadcaster() || cH.isServer()) continue;
 				DLList<ConnectionHandler.ServerInfo> out = cH.getServers();
 				System.out.println(out.size() + " Servers in list:");
 				for (ConnectionHandler.ServerInfo info : out){
 					System.out.println(info);
 				}
+			}
+			if (input.charAt(0) == '9' && cH != null){
+				//String[] nums = input.substring(2);//.split("\d+");
+				try{
+					cH.connect(input.substring(2));
+				}
+				catch (Exception ex){
+					ex.printStackTrace();
+				}
+				/*if (nums.length < 4){
+					System.out.println("Too few numbers in the IP address, requires 4+, got " + nums.length)
+				}
+				byte[] ip = new byte[4];
+				for (int i=0;i<4;i++){
+					ip[i] = Integer.parseInt(nums[i])
+				}
+				cH.connect(*/
 			}
 			if (input.equals("check") && cH != null){
 				System.out.println("\n\n" + cH.getConnections());

@@ -847,14 +847,14 @@ public final class ConnectionHandler implements Closeable{
 			try{
 				Packet tempPack = new Packet(52);//used to add the header info to the Datagram packet
 				byte[] send = new byte[52];
-				System.arraycopy(ByteTranslater.toSmallBytes(localName.toCharArray()), 0, send, 0, 26); //add the name 
-				System.arraycopy(match, 0, send, 26, 26);
+				System.arraycopy(ByteTranslater.toSmallBytes(localName.toCharArray()), 0, send, 0, Math.min(26, localName.length())); //add the name 
+				System.arraycopy(match, 0, send, 26, Math.min(26, match.length));
 				tempPack.add(send); //setting the headers out here because of jank
-				setSizeHeader(52); //guarenteed size of 52
-				setSenderHeader(2051);
-				setTimeHeader();
-				setBoolHeader(true, false, false, true, false); //iscomplete, not closing, no new connection, is ping, not encrypted
-				setServerProt();
+				tempPack.setSizeHeader(52); //guarenteed size of 52
+				tempPack.setSenderHeader(2051);
+				tempPack.setTimeHeader();
+				tempPack.setBoolHeader(true, false, false, true, false); //iscomplete, not closing, no new connection, is ping, not encrypted
+				tempPack.setServerProt();
 				
 				socket = new DatagramSocket();
 				socket.setBroadcast(true);
@@ -869,7 +869,7 @@ public final class ConnectionHandler implements Closeable{
 		public Broadcaster(int port, String match, String description){ //constructs a caster to catch messages coming for specified port
 			try{
 				socket = new DatagramSocket(port);
-				packet = new DatagramPacket(new byte[63], 63);
+				packet = new DatagramPacket(new byte[52+Packet.HEADERSIZE], 52+Packet.HEADERSIZE);
 				sender = false;
 				running = true;
 				this.description = description;
@@ -914,7 +914,7 @@ public final class ConnectionHandler implements Closeable{
 					try{
 						socket.receive(packet);
 						System.out.println(packet);
-						if (!this.match.equals(new String(packet.getData(), 0, 26))){ //Packet.HEADERSIZE+
+						if (!this.match.trim().equals(new String(packet.getData(), 0, 26).trim())){ //Packet.HEADERSIZE+
 							//item sending this packet wasn't intending to talk to us, ignore
 							continue;
 						}
@@ -978,9 +978,15 @@ public final class ConnectionHandler implements Closeable{
 				try{
 					Socket listen = server.accept();
 					Packet temp = Packet.read(listen.getInputStream());
-					ServerInfo data = new ServerInfo(temp.sendComplete());
-					if (this.bcl != null) this.bcl.onBroadcastConnection(data);
-					serverData.add(data);
+					ServerInfo data = new ServerInfo(temp.sendComplete()); 
+					boolean found=false;
+					for (ServerInfo item : serverData){
+						if (data.equals(item)) found = true;
+					}
+					if (!found){
+						if (this.bcl != null) this.bcl.onBroadcastConnection(data);
+						serverData.add(data);
+					}
 				}
 				catch (Exception ex){
 					ex.printStackTrace();
@@ -1041,11 +1047,22 @@ public final class ConnectionHandler implements Closeable{
 		public String toString(){
 			String ip = "";
 			for (int i=0;i<4;i++){
-				ip += this.serverIP[i];
+				ip += this.serverIP[i]&0xff;
 				if (i < 3) ip += ".";
 			}
 			ip += ":" + getPort();
 			return "IP: " + ip + ", Desc: " + this.description + ", Size: " + this.clientCount + "/" + this.maxClientCount;
+		}
+		public boolean equals(Object other){
+			if (other instanceof ServerInfo){
+				ServerInfo o = (ServerInfo)other;
+				byte[] otherNum = o.getIP();
+				for (int i=0;i<4;i++){
+					if (otherNum[i] != serverIP[i]) return false; //mismatch
+				}
+				return true;
+			}
+			return false;
 		}
 	}
 }
