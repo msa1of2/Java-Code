@@ -358,7 +358,11 @@ public final class ConnectionHandler implements Closeable{
 	
 	//Closes all connections this computer has through connectionHandler
 	public void close(){
-		if (!isServer){ //Client with only a server to notify
+		if (this.broadcastConnect){
+			if (this.broadcaster != null) this.broadcaster.close();
+			if (this.broadcasterReciever != null) this.broadcasterReciever.close();
+		}
+		else if (!isServer){ //Client with only a server to notify
 			if (client == null) throw new NullPointerException("Server connected to is null");
 			if(!client.client.isClosed()) send(new Packet(0), client, true, true, false, false); //isComplete, isClosing, isNew, isPing
 			client.die();
@@ -387,10 +391,7 @@ public final class ConnectionHandler implements Closeable{
 				ex.printStackTrace();
 			}
 		}
-		if (this.broadcastConnect){
-			if (this.broadcaster != null) this.broadcaster.close();
-			if (this.broadcasterReciever != null) this.broadcasterReciever.close();
-		}
+		
 	}
 	//Returns true if the connection handler's socket has closed
 	public boolean isClosed(){
@@ -931,7 +932,7 @@ public final class ConnectionHandler implements Closeable{
 							continue;
 						}
 						//intended to talk to us, send TCP connect request, send descriptive data, close connection
-						byte[] ipAddr = ByteTranslater.subArray(packet.getData(), Packet.IPSENDERSTART, 4);
+						byte[] ipAddr = ByteTranslater.subArray(packet.getData(), Packet.IPSENDERSTART, Packet.IPSENDERSTART+4);
 						Socket temp = new Socket(InetAddress.getByAddress(ipAddr), 2051);
 						Packet tempPacket = new Packet(9+ByteTranslater.toSmallBytes(this.description.toCharArray()).length); //4 + 4 + 1 + desc.size
 						tempPacket.add(ByteTranslater.toBytes(clientCount)); //number of clients connected in
