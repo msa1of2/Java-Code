@@ -10,6 +10,7 @@ import helpful.datastructures.Graph;
 public final class ConnectionHandler implements Closeable{
 	private boolean isServer, isConnected, isNetwork, voidBuffer, notifyNetwork; //void buffer only works when a message listener is set up - it wont add to the buffer when true
 	private boolean broadcastConnect; //Used to determine if broadcast server/receiver should be set up
+	private String localName;
 	private Client client;
 	private Client[] clients;
 	private ServerSocket server;
@@ -34,6 +35,7 @@ public final class ConnectionHandler implements Closeable{
 	
 	public ConnectionHandler(String ipAddr, boolean isServer, int maxClientCount, String name){
 		//isServer = false;
+		this.localName = name;
 		try{
 			if (ipAddr == null) ipAddr = "Null";
 			if (ipAddr.equals("127.0.0.1") || ipAddr.equals("localhost")){
@@ -133,7 +135,7 @@ public final class ConnectionHandler implements Closeable{
 		this.broadcastConnect = true;
 		this.infos = new DLList<ServerInfo>();
 		this.broadcaster = new Broadcaster(2050, ByteTranslater.toSmallBytes(projectName.toCharArray()));
-		this.broadcasterReciever = new BroadcastClientReciever(infos);
+		this.broadcasterReciever = new BroadcastClientReciever(infos, this.BCL);
 		
 		this.broadcastReciever = new Thread(this.broadcasterReciever);
 		this.broadcastReciever.start();
@@ -179,7 +181,7 @@ public final class ConnectionHandler implements Closeable{
 		}
 	}
 	//connects to the specified string representation of the ip
-	public void connect(String ip) throws IOException{ 
+	public void connect(String ipAddr) throws IOException{ 
 		Socket temp = new Socket(ipAddr, 2049);
 		buffer = new DLList<byte[]>();
 		runner = new Receiver(temp);
@@ -190,7 +192,7 @@ public final class ConnectionHandler implements Closeable{
 		byte[] ip = new byte[6];
 		System.arraycopy(InetAddress.getLocalHost().getAddress(), 0, ip, 0, 4);
 		System.arraycopy(ByteTranslater.toBytes((short)temp.getLocalPort()), 0, ip, 4, 2);
-		clients[0] = new Client(ip, name); //clients 0 is us
+		clients[0] = new Client(ip, this.localName); //clients 0 is us
 		clients[1] = client; //this is the server we connected to
 		clients[1].isServer = true;
 		
@@ -936,8 +938,10 @@ public final class ConnectionHandler implements Closeable{
 		private ServerSocket server;
 		private DLList<ServerInfo> serverData;
 		private boolean running;
-		public BroadcastClientReciever(DLList<ServerInfo> listOut){
+		private BroadcastConnectionListener bcl;
+		public BroadcastClientReciever(DLList<ServerInfo> listOut, BroadcastConnectionListener bcl){
 			this.serverData = listOut;
+			this.bcl = bcl;
 			try{
 				this.server = new ServerSocket(2051);
 				this.running = true;
@@ -959,7 +963,7 @@ public final class ConnectionHandler implements Closeable{
 					Socket listen = server.accept();
 					Packet temp = Packet.read(listen.getInputStream());
 					ServerInfo data = new ServerInfo(temp.sendComplete());
-					if (this.BCL != null) this.BCL.onBroadcastConnection(data);
+					if (this.bcl != null) this.bcl.onBroadcastConnection(data);
 					serverData.add(data);
 				}
 				catch (Exception ex){
@@ -1005,7 +1009,7 @@ public final class ConnectionHandler implements Closeable{
 		}
 		public String getStringIP(){
 			String send = "";
-			int count = 0
+			int count = 0;
 			for (byte item : getIP()){
 				send += item;
 				if (count < 3){

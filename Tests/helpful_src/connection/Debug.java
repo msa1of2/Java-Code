@@ -2,6 +2,7 @@ package helpful.connection;
 
 import java.util.Scanner;
 import helpful.connection.*;
+import helpful.datastructures.DLList;
 
 public class Debug{
 	public static void main(String[]args){
@@ -60,7 +61,7 @@ public class Debug{
 				System.out.println("All the names:\n" + nameString + "\b");
 			}
 			if (input.charAt(0) == '6' && cH != null){
-				cH = new ConnectionHandler(null, false, 4, input.substring(2);
+				cH = new ConnectionHandler(null, false, 4, input.substring(2));
 				cH.setBroadcastClient("Debug Broadcasting");
 				
 				temp = new Thread(new Run(cH), "Broadcast Client Thread");
@@ -77,9 +78,9 @@ public class Debug{
 			}
 			if (input.charAt(0) == 8 && cH != null){
 				if (!cH.isBroadcaster() || cH.isServer()) continue;
-				DLList<ServerInfo> out = cH.getServers();
-				System.out.println(out.size() + " Servers in list:")
-				for (ServerInfo info : out){
+				DLList<ConnectionHandler.ServerInfo> out = cH.getServers();
+				System.out.println(out.size() + " Servers in list:");
+				for (ConnectionHandler.ServerInfo info : out){
 					System.out.println(info);
 				}
 			}
